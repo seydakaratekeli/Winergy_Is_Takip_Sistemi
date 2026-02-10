@@ -222,34 +222,40 @@ $role_tr = [
                         // Hata durumunda varsayılan değerler kalır (0)
                     }
                     ?>
-                    <div class="alert alert-light border">
-                        <h6 class="fw-bold mb-3"><i class="bi bi-graph-up"></i> Kullanıcı İstatistikleri</h6>
-                        <div class="row text-center">
-                            <div class="col-md-4 mb-3 mb-md-0">
-                                <div class="p-3 bg-white rounded">
-                                    <h3 class="mb-1" style="color: var(--dt-pri-color);"><?php echo $assigned_jobs_count; ?></h3>
-                                    <small class="text-muted">Atanan İşler</small>
-                                </div>
-                            </div>
-                            <div class="col-md-4 mb-3 mb-md-0">
-                                <div class="p-3 bg-white rounded">
-                                    <h3 class="mb-1 text-success"><?php echo $created_jobs_count; ?></h3>
-                                    <small class="text-muted">Oluşturduğu İşler</small>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="p-3 bg-white rounded">
-                                    <h3 class="mb-1 text-info"><?php echo $updated_jobs_count; ?></h3>
-                                    <small class="text-muted">Güncellediği İşler</small>
-                                </div>
-                            </div>
+                    <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                        <div class="card-header border-0" style="background: transparent;">
+                            <h6 class="mb-0 fw-bold" style="color: var(--dt-sec-color);">
+                                <i class="bi bi-graph-up"></i> Kullanıcı İstatistikleri
+                            </h6>
                         </div>
-                        <hr class="my-3">
-                        <div class="text-center">
-                            <small class="text-muted">
-                                <i class="bi bi-calendar-check"></i> Kayıt Tarihi: 
-                                <strong><?php echo $user['created_at'] ? date('d.m.Y H:i', strtotime($user['created_at'])) : '-'; ?></strong>
-                            </small>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-4 mb-3 mb-md-0">
+                                    <div class="p-3 bg-white rounded shadow-sm">
+                                        <h3 class="mb-1" style="color: var(--dt-pri-color);"><?php echo $assigned_jobs_count; ?></h3>
+                                        <small class="text-muted">Atanan İşler</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3 mb-md-0">
+                                    <div class="p-3 bg-white rounded shadow-sm">
+                                        <h3 class="mb-1 text-success"><?php echo $created_jobs_count; ?></h3>
+                                        <small class="text-muted">Oluşturduğu İşler</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="p-3 bg-white rounded shadow-sm">
+                                        <h3 class="mb-1 text-info"><?php echo $updated_jobs_count; ?></h3>
+                                        <small class="text-muted">Güncellediği İşler</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr class="my-3">
+                            <div class="text-center">
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar-check"></i> Kayıt Tarihi: 
+                                    <strong><?php echo $user['created_at'] ? date('d.m.Y H:i', strtotime($user['created_at'])) : '-'; ?></strong>
+                                </small>
+                            </div>
                         </div>
                     </div>
                     
