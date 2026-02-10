@@ -1,0 +1,14 @@
+# Yüklenen dosyaların çalıştırılmasını engelle
+<FilesMatch "\.(php|php3|php4|php5|phtml|pl|py|jsp|asp|sh|cgi)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Sadece belirli dosya türlerine izin ver
+<FilesMatch "\.(jpg|jpeg|png|gif|pdf|doc|docx|xls|xlsx|txt|zip)$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>
+
+# Directory listing'i kapat
+Options -Indexes

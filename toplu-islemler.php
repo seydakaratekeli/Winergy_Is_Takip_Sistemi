@@ -1,0 +1,99 @@
+<?php 
+session_start();
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit;
+}
+require_once 'config/db.php';
+require_once 'includes/csrf.php'; // CSRF Koruması
+
+// Sadece POST isteklerine izin ver
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header("Location: index.php");
+    exit;
+}
+
+// CSRF Token Kontrolü
+if (!csrf_validate_token($_POST['csrf_token'] ?? '')) {
+    csrf_error(); // Geçersiz token - işlemi durdur
+}
+
+// Seçili iş ID'lerini al
+$job_ids = $_POST['job_ids'] ?? [];
+$action = $_POST['action'] ?? '';
+
+if (empty($job_ids) || empty($action)) {
+    header("Location: index.php?error=no_selection");
+    exit;
+}
+
+// ID'leri güvenlik için integer'a çevir
+$job_ids = array_map('intval', $job_ids);
+$placeholders = str_repeat('?,', count($job_ids) - 1) . '?';
+
+try {
+    switch ($action) {
+        case 'change_status':
+            $new_status = $_POST['new_status'] ?? '';
+            if (empty($new_status)) {
+                header("Location: index.php?error=no_status");
+                exit;
+            }
+            
+            $sql = "UPDATE jobs SET status = ?, updated_by = ?, updated_at = NOW() WHERE id IN ($placeholders)";
+            $params = array_merge([$new_status, $_SESSION['user_id']], $job_ids);
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            
+            header("Location: index.php?success=status_updated&count=" . $stmt->rowCount());
+            break;
+            
+        case 'assign_user':
+            $user_id = $_POST['assign_user_id'] ?? '';
+            if (empty($user_id)) {
+                header("Location: index.php?error=no_user");
+                exit;
+            }
+            
+            $sql = "UPDATE jobs SET assigned_user_id = ?, updated_by = ?, updated_at = NOW() WHERE id IN ($placeholders)";
+            $params = array_merge([$user_id, $_SESSION['user_id']], $job_ids);
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            
+            header("Location: index.php?success=assigned&count=" . $stmt->rowCount());
+            break;
+            
+        case 'delete':
+            // Silme işlemi sadece admin yapabilir
+            if ($_SESSION['user_role'] !== 'admin') {
+                header("Location: index.php?error=no_permission");
+                exit;
+            }
+            
+            // Önce ilişkili notları sil
+            $sql_notes = "DELETE FROM job_notes WHERE job_id IN ($placeholders)";
+            $stmt_notes = $db->prepare($sql_notes);
+            $stmt_notes->execute($job_ids);
+            
+            // İlişkili dosyaları sil
+            $sql_files = "DELETE FROM job_files WHERE job_id IN ($placeholders)";
+            $stmt_files = $db->prepare($sql_files);
+            $stmt_files->execute($job_ids);
+            
+            // İşleri sil
+            $sql = "DELETE FROM jobs WHERE id IN ($placeholders)";
+            $stmt = $db->prepare($sql);
+            $stmt->execute($job_ids);
+            
+            header("Location: index.php?success=deleted&count=" . $stmt->rowCount());
+            break;
+            
+        default:
+            header("Location: index.php?error=invalid_action");
+    }
+} catch (PDOException $e) {
+    error_log("Toplu işlem hatası: " . $e->getMessage());
+    header("Location: index.php?error=database");
+}
+exit;
+?>

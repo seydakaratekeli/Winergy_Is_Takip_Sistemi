@@ -1,0 +1,3 @@
+# Veritabanı yapılandırma dosyasına doğrudan erişimi engelle
+Order Allow,Deny
+Deny from all
