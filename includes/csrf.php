@@ -1,15 +1,4 @@
 <?php
-/**
- * CSRF (Cross-Site Request Forgery) Koruma Fonksiyonları
- * 
- * CSRF NEDİR?
- * Kötü niyetli bir sitenin, sizin oturumunuzu kullanarak
- * sisteminizde istek göndermesine dayanır.
- * 
- * Örnek: Bir kullanıcı sisteme giriş yapmış, sonra başka bir
- * siteye giriyor. O site gizlice sizin sisteminize silme isteği
- * gönderebilir. CSRF token bunu engeller.
- */
 
 /**
  * CSRF Token Oluştur
@@ -47,23 +36,15 @@ function csrf_validate_token($token) {
     // Token eşleşiyor mu? (timing attack'a karşı hash_equals kullanıyoruz)
     $valid = hash_equals($_SESSION['csrf_token'], $token);
     
-    // Kullan-at prensibi: Kullanıldıktan sonra sil
-    // (Opsiyonel - eğer aynı formda birden fazla submit istiyorsanız bunu kaldırın)
-    unset($_SESSION['csrf_token']);
+    // Kullan-at prensibi: Kullanıldıktan sonra sil (her formda yeni token oluşturulacak)
+    if ($valid) {
+        unset($_SESSION['csrf_token']);
+    }
     
     return $valid;
 }
 
-/**
- * CSRF Input Field Oluştur
- * Form içine eklenecek hidden input
- * 
- * Kullanım:
- * <form method="POST">
- *     <?php echo csrf_input(); ?>
- *     <!-- Diğer form alanları -->
- * </form>
- */
+
 function csrf_input() {
     $token = csrf_generate_token();
     return '<input type="hidden" name="csrf_token" value="' . htmlspecialchars($token, ENT_QUOTES, 'UTF-8') . '">';
@@ -91,25 +72,4 @@ function csrf_error() {
     ');
 }
 
-/**
- * KULLANIM ÖRNEĞİ:
- * 
- * // Form sayfasında (örn: kullanici-sil.php)
- * require_once 'includes/csrf.php';
- * 
- * <form method="POST">
- *     <?php echo csrf_input(); ?>
- *     <button type="submit">Sil</button>
- * </form>
- * 
- * // Form işleyicide (POST alındığında)
- * if ($_SERVER['REQUEST_METHOD'] == 'POST') {
- *     if (!csrf_validate_token($_POST['csrf_token'] ?? '')) {
- *         csrf_error(); // Geçersiz token - işlemi durdur
- *     }
- *     
- *     // Token geçerli - işleme devam et
- *     // ... silme işlemi
- * }
- */
 ?>

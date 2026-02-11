@@ -32,12 +32,6 @@ if (isset($_POST['update_status']) && isset($_POST['status'])) {
         // Türkçe karakter encoding'ini normalize et
         $new_status = mb_convert_encoding($new_status, 'UTF-8', 'UTF-8');
         
-        // Debug için log
-        error_log("=== Durum Güncelleme Debug ===");
-        error_log("Gelen durum: '" . $new_status . "'");
-        error_log("Uzunluk: " . strlen($new_status));
-        error_log("Encoding: " . mb_detect_encoding($new_status, 'UTF-8', true));
-        
         // Geçerli durumları tanımla
         $valid_statuses = [
             'Açıldı',

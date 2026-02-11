@@ -105,29 +105,46 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
 <!-- Dashboard Header -->
 <div class="row mb-4">
     <div class="col-12">
-        <div class="card border-0 shadow-sm" style="background: var(--dt-priGrd-color); color: var(--dt-whi-color);">
+        <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%); color: white; border-radius: 1rem;">
             <div class="card-body p-4">
                 <div class="row align-items-center">
-                    <div class="col-md-8">
-                        <h2 class="fw-bold mb-2">
-                            <i class="bi bi-speedometer2 me-2"></i>İş Takip Dashboard
-                        </h2>
-                        <p class="mb-0 opacity-90">
-                            <i class="bi bi-lightning-charge-fill me-1"></i>
-                            Winergy Technologies - Enerji Verimliliği Projeleri
+                    <div class="col-lg-5 mb-3 mb-lg-0">
+                        <h3 class="fw-bold mb-1" style="color: white;">
+                            <i class="bi bi-speedometer2 me-2"></i>İş Takip Sistemi
+                        </h3>
+                        <p class="mb-0 opacity-75 small">
+                            Hoş geldiniz, <strong><?php echo htmlspecialchars($_SESSION['user_name']); ?></strong>! Bugün <?php echo date('d M Y'); ?>.
                         </p>
                     </div>
-                    <div class="col-md-4 text-end mt-3 mt-md-0">
-                        <div class="d-flex gap-2 justify-content-end align-items-center flex-wrap">
-                            <span class="badge bg-white text-info px-3 py-2">
-                                <i class="bi bi-folder-plus me-1"></i>Açıldı: <strong><?php echo $stats['Açıldı'] ?? 0; ?></strong>
-                            </span>
-                            <span class="badge bg-white text-warning px-3 py-2">
-                                <i class="bi bi-hourglass-split me-1"></i>Çalışılıyor: <strong><?php echo $stats['Çalışılıyor'] ?? 0; ?></strong>
-                            </span>
-                            <span class="badge bg-white text-success px-3 py-2">
-                                <i class="bi bi-check-circle-fill me-1"></i>Tamamlandı: <strong><?php echo $stats['Tamamlandı'] ?? 0; ?></strong>
-                            </span>
+                    
+                    <div class="col-lg-7">
+                        <div class="d-flex gap-2 justify-content-lg-end flex-wrap">
+                            
+                            <div class="bg-white px-3 py-2 d-flex align-items-center shadow-sm" style="border-radius: 0.75rem; min-width: 110px;">
+                                <i class="bi bi-folder-plus me-2" style="color: #0ea5e9;"></i>
+                                <span class="small fw-bold text-dark">Açıldı: <span style="color: #0ea5e9;"><?php echo $stats['Açıldı'] ?? 0; ?></span></span>
+                            </div>
+
+                            <div class="bg-white px-3 py-2 d-flex align-items-center shadow-sm" style="border-radius: 0.75rem; min-width: 110px;">
+                                <i class="bi bi-hourglass-split me-2" style="color: #f59e0b;"></i>
+                                <span class="small fw-bold text-dark">İşlem: <span style="color: #f59e0b;"><?php echo $stats['Çalışılıyor'] ?? 0; ?></span></span>
+                            </div>
+
+                            <div class="bg-white px-3 py-2 d-flex align-items-center shadow-sm" style="border-radius: 0.75rem; min-width: 110px;">
+                                <i class="bi bi-pause-circle-fill me-2" style="color: #64748b;"></i>
+                                <span class="small fw-bold text-dark">Bekle: <span style="color: #64748b;"><?php echo $stats['Beklemede'] ?? 0; ?></span></span>
+                            </div>
+
+                            <div class="bg-white px-3 py-2 d-flex align-items-center shadow-sm" style="border-radius: 0.75rem; min-width: 110px;">
+                                <i class="bi bi-check-circle-fill me-2" style="color: #22c55e;"></i>
+                                <span class="small fw-bold text-dark">Bitti: <span style="color: #22c55e;"><?php echo $stats['Tamamlandı'] ?? 0; ?></span></span>
+                            </div>
+
+                            <div class="bg-white px-3 py-2 d-flex align-items-center shadow-sm" style="border-radius: 0.75rem; min-width: 110px;">
+                                <i class="bi bi-x-circle-fill me-2" style="color: #ef4444;"></i>
+                                <span class="small fw-bold text-dark">İptal: <span style="color: #ef4444;"><?php echo $stats['İptal'] ?? 0; ?></span></span>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -137,59 +154,59 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
 </div>
 
 <!-- Filtre Bölümü -->
-<div class="card shadow-sm border-0 mb-4">
-    <div class="card-header bg-white border-0 pb-0">
-        <h6 class="fw-bold mb-0">
-            <i class="bi bi-funnel-fill me-2 text-primary"></i>Filtreler
-        </h6>
-    </div>
-    <div class="card-body pt-3">
+<div class="card shadow-sm border-0 mb-4" style="border-radius: 1rem;">
+    <div class="card-body p-4">
+        <h5 class="fw-bold mb-4" style="font-size: 1.25rem;">
+            <i class="bi bi-funnel me-2 text-primary"></i>Hızlı Filtreleme
+        </h5>
+        
         <form method="GET" class="row g-3 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label fw-bold small text-muted">
+            <div class="col-lg-4 col-md-6">
+                <label class="form-label small fw-bold text-muted mb-2">
                     <i class="bi bi-gear me-1"></i>Hizmet Türü
                 </label>
-                <select name="service_type" class="form-select">
-                    <option value="">Tümünü Göster</option>
+                <select name="service_type" class="form-select border-light-subtle" style="border-radius: 0.6rem;">
+                    <option value="">Tüm Hizmetler</option>
                     <option value="Enerji Etüdü" <?php echo ($_GET['service_type'] ?? '') == 'Enerji Etüdü' ? 'selected' : ''; ?>>Enerji Etüdü</option>
                     <option value="ISO 50001" <?php echo ($_GET['service_type'] ?? '') == 'ISO 50001' ? 'selected' : ''; ?>>ISO 50001</option>
                     <option value="EKB" <?php echo ($_GET['service_type'] ?? '') == 'EKB' ? 'selected' : ''; ?>>Enerji Kimlik Belgesi (EKB)</option>
                     <option value="Enerji Yöneticisi" <?php echo ($_GET['service_type'] ?? '') == 'Enerji Yöneticisi' ? 'selected' : ''; ?>>Enerji Yöneticisi</option>
                 </select>
             </div>
-            <div class="col-md-4">
-                <label class="form-label fw-bold small text-muted">
+
+            <div class="col-lg-4 col-md-6">
+                <label class="form-label small fw-bold text-muted mb-2">
                     <i class="bi bi-flag me-1"></i>İş Durumu
                 </label>
-                <select name="status" class="form-select">
-                    <option value="">Tümünü Göster</option>
+                <select name="status" class="form-select border-light-subtle" style="border-radius: 0.6rem;">
+                    <option value="">Tüm Durumlar</option>
                     <option value="Açıldı" <?php echo ($_GET['status'] ?? '') == 'Açıldı' ? 'selected' : ''; ?>>Açıldı</option>
                     <option value="Çalışılıyor" <?php echo ($_GET['status'] ?? '') == 'Çalışılıyor' ? 'selected' : ''; ?>>Çalışılıyor</option>
                     <option value="Beklemede" <?php echo ($_GET['status'] ?? '') == 'Beklemede' ? 'selected' : ''; ?>>Beklemede</option>
                     <option value="Tamamlandı" <?php echo ($_GET['status'] ?? '') == 'Tamamlandı' ? 'selected' : ''; ?>>Tamamlandı</option>
                 </select>
             </div>
-            <div class="col-md-4 d-flex gap-2 align-items-end">
-                <button type="submit" class="btn btn-winergy flex-grow-1">
-                    <i class="bi bi-search me-1"></i>Filtrele
+
+            <div class="col-lg-4 col-md-12 d-flex gap-2">
+                <button type="submit" class="btn btn-winergy flex-grow-1 fw-bold shadow-sm" style="border-radius: 0.6rem; padding: 0.6rem;">
+                    <i class="bi bi-search me-2"></i>Sonuçları Filtrele
                 </button>
-                <a href="index.php" class="btn btn-outline-secondary">
-                    <i class="bi bi-x-circle"></i>
+                <a href="index.php" class="btn btn-outline-secondary px-3 shadow-sm d-flex align-items-center justify-content-center" style="border-radius: 0.6rem;" title="Filtreleri Temizle">
+                    <i class="bi bi-arrow-clockwise"></i>
                 </a>
             </div>
         </form>
     </div>
 </div>
-
 <!-- Toplu İşlemler Paneli -->
-<div class="card border-0 shadow-sm mb-3" id="bulkActionsPanel" style="display: none;">
-    <div class="card-body py-3">
-        <form?php echo csrf_input(); // CSRF Token ?>
-            < action="toplu-islemler.php" method="POST" id="bulkActionsForm">
+<div class="card border-0 shadow mb-3" id="bulkActionsPanel" style="display: none; border-radius: 1.5rem; border-left: 5px solid var(--dt-pri-color);">
+    <div class="card-body py-3 px-4">
+        <form action="toplu-islemler.php" method="POST" id="bulkActionsForm">
+            <?php echo csrf_input(); // CSRF Token ?>
             <div class="row g-3 align-items-end">
-                <div class="col-md-3">
-                    <label class="form-label small fw-bold">Toplu İşlem Seç</label>
-                    <select name="action" id="bulkAction" class="form-select form-select-sm" required>
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label fw-bold" style="font-size: 1.4rem;">Toplu İşlem Seç</label>
+                    <select name="action" id="bulkAction" class="form-select" style="font-size: 1.5rem;" required>
                         <option value="">-- İşlem Seçin --</option>
                         <option value="change_status">Durum Değiştir</option>
                         <option value="assign_user">Personel Ata</option>
@@ -200,9 +217,9 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
                 </div>
                 
                 <!-- Durum değiştirme -->
-                <div class="col-md-3" id="statusSelectDiv" style="display: none;">
-                    <label class="form-label small fw-bold">Yeni Durum</label>
-                    <select name="new_status" class="form-select form-select-sm">
+                <div class="col-lg-3 col-md-6" id="statusSelectDiv" style="display: none;">
+                    <label class="form-label fw-bold" style="font-size: 1.4rem;">Yeni Durum</label>
+                    <select name="new_status" class="form-select" style="font-size: 1.5rem;">
                         <option value="Açıldı">Açıldı</option>
                         <option value="Çalışılıyor">Çalışılıyor</option>
                         <option value="Beklemede">Beklemede</option>
@@ -212,9 +229,9 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
                 </div>
                 
                 <!-- Personel atama -->
-                <div class="col-md-3" id="userSelectDiv" style="display: none;">
-                    <label class="form-label small fw-bold">Personel</label>
-                    <select name="assign_user_id" class="form-select form-select-sm">
+                <div class="col-lg-3 col-md-6" id="userSelectDiv" style="display: none;">
+                    <label class="form-label fw-bold" style="font-size: 1.4rem;">Personel</label>
+                    <select name="assign_user_id" class="form-select" style="font-size: 1.5rem;">
                         <option value="">Atanmadı</option>
                         <?php 
                         $role_tr = [
@@ -231,9 +248,9 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
                     </select>
                 </div>
                 
-                <div class="col-md-3">
-                    <button type="submit" class="btn btn-winergy btn-sm w-100" onclick="return confirm('Seçili işleri güncellemek istediğinize emin misiniz?');">
-                        <i class="bi bi-check-circle me-1"></i>Uygula (<span id="selectedCount">0</span> İş)
+                <div class="col-lg-3 col-md-6">
+                    <button type="submit" class="btn btn-winergy w-100" style="font-size: 1.6rem; padding: 1.2rem;" onclick="return confirm('Seçili işleri güncellemek istediğinize emin misiniz?');">
+                        <i class="bi bi-check-circle me-2"></i>Uygula (<span id="selectedCount">0</span> İş)
                     </button>
                 </div>
             </div>
@@ -244,12 +261,12 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
 <!-- İş Listesi Tablosu -->
 <form id="jobsTableForm">
 <div class="table-container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h5 class="mb-0 fw-bold">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h5 class="mb-0 fw-bold" style="font-size: 2rem;">
             <i class="bi bi-list-check me-2 text-primary"></i>İş Listesi
         </h5>
-        <span class="badge bg-primary px-3 py-2">
-            <i class="bi bi-folder2-open me-1"></i>Toplam: <?php echo count($jobs); ?> İş
+        <span class="badge bg-primary px-4 py-3" style="font-size: 1.5rem; border-radius: 1rem;">
+            <i class="bi bi-folder2-open me-2"></i>Toplam: <?php echo count($jobs); ?> İş
         </span>
     </div>
     <table class="table table-hover align-middle">

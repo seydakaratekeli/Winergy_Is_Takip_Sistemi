@@ -64,12 +64,6 @@ try {
             break;
             
         case 'delete':
-            // Silme işlemi sadece admin yapabilir
-            if ($_SESSION['user_role'] !== 'admin') {
-                header("Location: index.php?error=no_permission");
-                exit;
-            }
-            
             // Önce ilişkili notları sil
             $sql_notes = "DELETE FROM job_notes WHERE job_id IN ($placeholders)";
             $stmt_notes = $db->prepare($sql_notes);

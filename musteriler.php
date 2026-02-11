@@ -81,10 +81,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_customer'])) {
 <div class="card shadow-sm border-0 mb-4">
     <div class="card-body">
         <form method="GET" class="d-flex gap-2">
-            <input type="text" name="search" class="form-control" placeholder="Firma adı veya yetkili kişi ile ara..." value="<?php echo htmlspecialchars($search); ?>">
-            <button type="submit" class="btn btn-primary px-4">Ara</button>
+            <input type="text" name="search" class="form-control flex-grow-1" style="max-width: 500px;" placeholder="Firma adı veya ilgili kişi ara..." value="<?php echo htmlspecialchars($search); ?>">
+            <button type="submit" class="btn btn-primary px-4 flex-shrink-0">Ara</button>
             <?php if(!empty($search)): ?>
-                <a href="musteriler.php" class="btn btn-outline-secondary">Temizle</a>
+                <a href="musteriler.php" class="btn btn-outline-secondary flex-shrink-0">Temizle</a>
             <?php endif; ?>
         </form>
     </div>

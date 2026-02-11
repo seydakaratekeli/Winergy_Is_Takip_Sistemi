@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'config/db.php';
+require_once 'includes/logger.php';
 
 // Zaten giriş yapılmışsa doğrudan ana sayfaya yönlendir
 if (isset($_SESSION['user_id'])) {
@@ -42,13 +43,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_SESSION['user_name'] = $user['name'];
             $_SESSION['user_role'] = $user['role']; // admin, operasyon, danisman 
             
+            log_activity('Giriş Yapıldı', "Kullanıcı: {$user['name']} ({$user['role']})", 'SUCCESS');
+            
             header("Location: index.php");
             exit;
         } else {
             $error = "Hatalı e-posta veya şifre.";
+            log_activity('Başarısız Giriş', "E-posta: $email", 'WARNING');
         }
     } else {
         $error = "Hatalı e-posta veya şifre.";
+        log_activity('Başarısız Giriş', "Bilinmeyen e-posta: $email", 'WARNING');
     }
 }
 ?>
@@ -70,12 +75,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link rel="stylesheet" href="assets/style.css">
     
     <style>
+        /* Login sayfası için body override */
+        html, body { 
+            height: 100%;
+        }
+        
         body { 
             background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
-            display: flex; 
+            display: flex !important;
+            flex-direction: column !important;
             align-items: center; 
             justify-content: center;
-            min-height: 100vh;
             font-family: 'Inter', sans-serif;
         }
         
@@ -160,8 +170,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         
         .login-footer a:hover {
-            text-decoration: underline;>
-            <h5>İş Takip Sistemi</h5
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -171,11 +181,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <div class="login-header">
             <!-- Winergy Logo -->
             <img src="assets/images/winergy-logo.png" alt="Winergy Technologies" style="max-width: 280px; margin-bottom: 1rem;">
-            <p class="mb-0">İş Takip Sistemi</p>
+            <h5>İş Takip Sistemi</h5>
         </div>
 
         <div class="login-body">
-            <?php if($error): ?>" style="color: #14b8a6;"></i>E-Posta Adresi
+            <?php if($error): ?>
+                <div class="alert alert-danger alert-dismissible fade show">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <?php echo $error; ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php endif; ?>
+
+            <form method="POST" action="">
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-dark">
+                        <i class="bi bi-envelope-fill me-2" style="color: #14b8a6;"></i>E-Posta Adresi
                     </label>
                     <input type="email" 
                            name="email" 
@@ -187,17 +208,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 
                 <div class="mb-4">
                     <label class="form-label fw-bold text-dark">
-                        <i class="bi bi-lock-fill me-2" style="color: #14b8a6;
-                           name="email" 
-                           class="form-control" 
-                           placeholder="kullanici@winergytech.com" 
-                           required 
-                           autofocus>
-                </div>
-                
-                <div class="mb-4">
-                    <label class="form-label fw-bold text-dark">
-                        <i class="bi bi-lock-fill me-2 text-primary"></i>Şifre
+                        <i class="bi bi-lock-fill me-2" style="color: #14b8a6;"></i>Şifre
                     </label>
                     <input type="password" 
                            name="password" 
@@ -206,12 +217,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                            required>
                 </div>
                 
-            <a href="tel:03123956828">0312 395 68 28</a>
-        </p>
-        <p class="small">
-            <a href="https://winergytechnologies.com" target="_blank">winergytechnologies.com</a>
-        </p>
-        <p class="small text-mutedi-box-arrow-in-right me-2"></i>Sisteme Giriş Yap
+                <button type="submit" class="btn btn-login w-100">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Sisteme Giriş Yap
                 </button>
             </form>
         </div>
@@ -219,7 +226,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
     <div class="login-footer">
         <p class="mb-2">
-            <i class="bi bi-telephone-fill me-2"></i>0312 395 68 28
+            <i class="bi bi-telephone-fill me-2"></i>
+            <a href="tel:03123956828">0312 395 68 28</a>
+        </p>
+        <p class="small">
+            <a href="https://winergytechnologies.com" target="_blank">winergytechnologies.com</a>
         </p>
         <p class="small opacity-75">
             &copy; <?php echo date('Y'); ?> Winergy Technologies | Tüm Hakları Saklıdır

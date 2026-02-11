@@ -11,8 +11,9 @@ if ($_SESSION['user_role'] !== 'admin') {
     exit;
 }
 
-require_once 'config/db.php'; 
-require_once 'includes/csrf.php'; // CSRF Koruması
+require_once 'config/db.php';
+require_once 'includes/csrf.php';
+require_once 'includes/logger.php';
 
 // ID kontrolü
 $id = $_GET['id'] ?? null;
@@ -64,6 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_delete'])) {
         // NOT: Foreign key'ler SET NULL olduğu için ilişkili kayıtlar korunur
         $stmt = $db->prepare("DELETE FROM users WHERE id = ?");
         if ($stmt->execute([$id])) {
+            log_activity('Kullanıcı Silindi', "ID: $id, Ad: {$user['name']}, İlişkili kayıt: İş=$job_count, Müşteri=$customer_count, Not=$note_count", 'WARNING');
             header("Location: kullanicilar.php?deleted=1");
             exit;
         }

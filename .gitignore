@@ -1,0 +1,44 @@
+# Veritabanı yapılandırması (hassas bilgiler)
+config/db.php
+
+# Yüklenen dosyalar
+uploads/*
+!uploads/.htaccess
+!uploads/index.html
+
+# Loglar
+logs/*
+!logs/.htaccess
+!logs/index.html
+
+# Yedekler
+backups/*
+!backups/.htaccess
+!backups/index.html
+
+# Sistem dosyaları
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE / Editor
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Geçici dosyalar
+*.log
+*.tmp
+*.bak
+*.swp
+*~
+
+# Migration dosyaları (çalıştırıldıktan sonra silinmeli)
+update_*.php
+migrate_*.php
+
+# PHP
+vendor/
+composer.lock
+.env

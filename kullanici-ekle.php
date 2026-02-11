@@ -11,7 +11,8 @@ if ($_SESSION['user_role'] !== 'admin') {
     exit;
 }
 
-require_once 'config/db.php'; 
+require_once 'config/db.php';
+require_once 'includes/logger.php';
 include 'includes/header.php';
 
 $error = "";
@@ -157,15 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     
                     <hr class="my-4">
                     
-                    <!-- Rol Açıklamaları -->
-                    <div class="alert alert-info mb-4">
-                        <h6 class="fw-bold mb-2"><i class="bi bi-info-circle"></i> Rol Yetkileri</h6>
-                        <ul class="mb-0 small">
-                            <li><strong>Yönetici:</strong> Kullanıcı yönetimi, toplu silme, tüm işlemler</li>
-                            <li><strong>Operasyon:</strong> İş ekleme, düzenleme, müşteri yönetimi, raporlar</li>
-                            <li><strong>Danışman:</strong> İş görüntüleme, not ekleme, dosya yükleme (sınırlı)</li>
-                        </ul>
-                    </div>
+                    
                     
                     <!-- Buttons -->
                     <div class="d-flex justify-content-between">

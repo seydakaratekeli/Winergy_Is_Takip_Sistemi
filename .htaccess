@@ -1,0 +1,48 @@
+# Security Headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Dizin listeleme kapalı
+Options -Indexes
+
+# Hassas dosyalara erişimi engelle
+<FilesMatch "\.(gitignore|htaccess|htpasswd|ini|log|sh|sql|bak)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Gizli dosyalara erişimi engelle
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# PHP Error Display (Development için)
+# Production'da bu satırları aktif edin:
+# php_flag display_errors off
+# php_flag display_startup_errors off
+# php_value error_log /path/to/error.log
+
+# Upload limitleri
+php_value upload_max_filesize 10M
+php_value post_max_size 10M
+php_value max_execution_time 30
+
+# Session Security
+php_value session.cookie_httponly 1
+php_value session.cookie_secure 0
+# HTTPS kullanıyorsanız yukarıdaki değeri 1 yapın
+
+# Karakter seti
+AddDefaultCharset UTF-8
+
+# HTTPS Redirect (SSL sertifikası varsa aktif edin)
+# <IfModule mod_rewrite.c>
+#     RewriteEngine On
+#     RewriteCond %{HTTPS} off
+#     RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+# </IfModule>

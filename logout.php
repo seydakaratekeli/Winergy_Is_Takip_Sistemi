@@ -1,5 +1,11 @@
 <?php
 session_start();
+require_once 'includes/logger.php';
+
+// Log aktivitesi
+if (isset($_SESSION['user_name'])) {
+    log_activity('Çıkış Yapıldı', "Kullanıcı: {$_SESSION['user_name']}", 'INFO');
+}
 
 // Session verilerini temizle
 $_SESSION = array();

@@ -4,7 +4,8 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
 }
-require_once 'config/db.php'; 
+require_once 'config/db.php';
+require_once 'includes/logger.php';
 include 'includes/header.php'; 
 
 // Form gönderildiğinde veritabanına kayıt yapalım

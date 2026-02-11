@@ -1,7 +1,8 @@
-</div> <!-- container kapanış -->
+</div> <!-- header devamı container kapanış -->
+</div> <!-- header devamı main-wrapper kapanış -->
 
-<!-- Modern Footer -->
-<footer class="mt-5 py-4" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: rgba(255,255,255,0.8);">
+<!-- Modern Footer - Sticky Footer -->
+<footer class="py-4" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: rgba(255,255,255,0.8);">
     <div class="container">
         <div class="row align-items-center">
             <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">

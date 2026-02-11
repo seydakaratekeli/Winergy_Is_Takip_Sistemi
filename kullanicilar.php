@@ -211,31 +211,4 @@ $stats = [
     </div>
 </div>
 
-<!-- Rol Açıklamaları -->
-<div class="card border-0 shadow-sm mt-4">
-    <div class="card-body">
-        <h6 class="fw-bold mb-3"><i class="bi bi-info-circle"></i> Rol Yetkileri</h6>
-        <div class="row">
-            <div class="col-md-4">
-                <div class="mb-2">
-                    <span class="badge bg-danger me-2">Yönetici</span>
-                    <small class="text-muted">Tüm sistemlere tam erişim, kullanıcı yönetimi, toplu silme</small>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="mb-2">
-                    <span class="badge bg-primary me-2">Operasyon</span>
-                    <small class="text-muted">İş yönetimi, müşteri yönetimi, raporlar</small>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="mb-2">
-                    <span class="badge bg-info me-2">Danışman</span>
-                    <small class="text-muted">İş görüntüleme, not ekleme, dosya yükleme</small>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <?php include 'includes/footer.php'; ?>
