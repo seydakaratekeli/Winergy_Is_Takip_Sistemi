@@ -2,6 +2,7 @@
 session_start();
 require_once 'config/db.php';
 require_once 'includes/logger.php';
+require_once 'includes/csrf.php';
 
 // Zaten giriş yapılmışsa doğrudan ana sayfaya yönlendir
 if (isset($_SESSION['user_id'])) {
@@ -12,48 +13,39 @@ if (isset($_SESSION['user_id'])) {
 $error = "";
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $email = $_POST['email'];
+    // 1. CSRF Token Kontrolü
+    if (!isset($_POST['csrf_token']) || !csrf_validate_token($_POST['csrf_token'])) {
+        csrf_error();
+    }
+    
+    // Veri temizliği: E-postadaki gereksiz boşlukları temizleyelim
+    $email = trim($_POST['email']);
     $password = $_POST['password'];
 
-    // Kullanıcıyı sorgula
-    $stmt = $db->prepare("SELECT * FROM users WHERE email = ? AND is_active = 1");
+    // 2. Kullanıcıyı sorgula (Sadece gerekli sütunları çekmek performansı artırır)
+    $stmt = $db->prepare("SELECT id, name, password, role FROM users WHERE email = ? AND is_active = 1");
     $stmt->execute([$email]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if ($user) {
-        // Şifre kontrolü - hem hash hem düz metin desteği
-        $password_valid = false;
+    // 3. Kullanıcı var mı ve Şifre doğru mu? (Tek blokta kontrol)
+    if ($user && password_verify($password, $user['password'])) {
         
-        // Önce hash olarak dene
-        if (password_verify($password, $user['password'])) {
-            $password_valid = true;
-        }
-        // Eğer hash değilse düz metin kontrolü (geçici)
-        elseif ($password === $user['password']) {
-            $password_valid = true;
-            
-            // Şifreyi otomatik hashle ve güncelle
-            $hashed = password_hash($password, PASSWORD_DEFAULT);
-            $update_stmt = $db->prepare("UPDATE users SET password = ? WHERE id = ?");
-            $update_stmt->execute([$hashed, $user['id']]);
-        }
+        // 4. BAŞARILI GİRİŞ: Oturum güvenliğini yenile (Session Fixation koruması)
+        session_regenerate_id(true); 
+
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['user_name'] = $user['name'];
+        $_SESSION['user_role'] = $user['role']; // admin, operasyon, danisman 
         
-        if ($password_valid) {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['user_name'] = $user['name'];
-            $_SESSION['user_role'] = $user['role']; // admin, operasyon, danisman 
-            
-            log_activity('Giriş Yapıldı', "Kullanıcı: {$user['name']} ({$user['role']})", 'SUCCESS');
-            
-            header("Location: index.php");
-            exit;
-        } else {
-            $error = "Hatalı e-posta veya şifre.";
-            log_activity('Başarısız Giriş', "E-posta: $email", 'WARNING');
-        }
+        // Başarılı giriş günlüğünü kaydet
+        log_activity('Giriş Yapıldı', "Kullanıcı: {$user['name']} ({$user['role']})", 'SUCCESS');
+        
+        header("Location: index.php");
+        exit;
     } else {
+        // 5. BAŞARISIZ GİRİŞ: Generic hata mesajı vererek bilgi sızmasını önle
         $error = "Hatalı e-posta veya şifre.";
-        log_activity('Başarısız Giriş', "Bilinmeyen e-posta: $email", 'WARNING');
+        log_activity('Başarısız Giriş Denemesi', "E-posta: $email", 'WARNING');
     }
 }
 ?>
@@ -194,6 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <?php endif; ?>
 
             <form method="POST" action="">
+                <?php echo csrf_input(); ?>
                 <div class="mb-3">
                     <label class="form-label fw-bold text-dark">
                         <i class="bi bi-envelope-fill me-2" style="color: #14b8a6;"></i>E-Posta Adresi

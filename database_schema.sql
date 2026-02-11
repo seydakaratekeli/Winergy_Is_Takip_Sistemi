@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS customer_notes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     customer_id INT NOT NULL,
     user_id INT NOT NULL,
-    note_type ENUM('genel', 'anlaşma', 'önemli', 'toplantı') DEFAULT 'genel',
+    note_type ENUM('general','agreement','important','meeting') DEFAULT 'general',
     note TEXT NOT NULL,
     created_by INT,
     updated_by INT,

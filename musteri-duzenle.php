@@ -4,7 +4,8 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
 }
-require_once 'config/db.php'; 
+require_once 'config/db.php';
+require_once 'includes/csrf.php'; 
 
 // ID kontrolü
 $id = $_GET['id'] ?? null;
@@ -44,6 +45,11 @@ if (isset($_GET['delete_note'])) {
 
 // Not ekleme işlemi
 if (isset($_POST['add_note'])) {
+    // CSRF Token Kontrolü
+    if (!csrf_validate_token($_POST['csrf_token'] ?? '')) {
+        csrf_error();
+    }
+    
     $note = trim($_POST['note']);
     $note_type = $_POST['note_type'];
     $user_id = $_SESSION['user_id'];
@@ -62,10 +68,16 @@ if (isset($_POST['add_note'])) {
 
 // Form gönderildiğinde güncelle
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && !isset($_POST['add_note'])) {
+    // CSRF Token Kontrolü
+    if (!csrf_validate_token($_POST['csrf_token'] ?? '')) {
+        csrf_error();
+    }
+    
     $name = trim($_POST['name']);
     $contact_name = trim($_POST['contact_name']);
     $phone = trim($_POST['phone']);
     $email = trim($_POST['email']);
+    $address = trim($_POST['address']);
     $updated_by = $_SESSION['user_id'];
 
     try {
@@ -74,12 +86,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !isset($_POST['add_note'])) {
                 contact_name = ?, 
                 phone = ?, 
                 email = ?,
+                address = ?,
                 updated_by = ?
                 WHERE id = ?";
         
         $stmt = $db->prepare($sql);
         
-        if ($stmt->execute([$name, $contact_name, $phone, $email, $updated_by, $id])) {
+        if ($stmt->execute([$name, $contact_name, $phone, $email, $address, $updated_by, $id])) {
             header("Location: musteriler.php?updated=1");
             exit;
         }
@@ -138,6 +151,7 @@ include 'includes/header.php';
                     </div>
                     <div class="card-body">
                         <form method="POST">
+                            <?php echo csrf_input(); ?>
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Firma / Müşteri Adı *</label>
                                 <input type="text" name="name" class="form-control" 
@@ -166,6 +180,12 @@ include 'includes/header.php';
                                            value="<?php echo htmlspecialchars($customer['email']); ?>" 
                                            placeholder="mail@firma.com">
                                 </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Adres</label>
+                                <textarea name="address" class="form-control" rows="3" 
+                                          placeholder="Müşteri adresi..."><?php echo htmlspecialchars($customer['address']); ?></textarea>
                             </div>
 
                             <hr>
@@ -267,6 +287,7 @@ include 'includes/header.php';
                     <div class="card-body">
                         <!-- Not Ekleme Formu -->
                         <form method="POST" class="mb-4">
+                            <?php echo csrf_input(); ?>
                             <div class="mb-2">
                                 <label class="form-label small fw-bold">Yeni Not Ekle</label>
                                 <select name="note_type" class="form-select form-select-sm mb-2">

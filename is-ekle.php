@@ -6,18 +6,25 @@ if (!isset($_SESSION['user_id'])) {
 }
 require_once 'config/db.php';
 require_once 'includes/logger.php';
+require_once 'includes/csrf.php';
 include 'includes/header.php'; 
 
 // Form gönderildiğinde veritabanına kayıt yapalım
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // CSRF Token Kontrolü
+    if (!csrf_validate_token($_POST['csrf_token'] ?? '')) {
+        csrf_error();
+    }
+    
+    
     $customer_id = $_POST['customer_id'];
     $service_type = $_POST['service_type'];
-    $title = $_POST['title'];
-    $description = $_POST['description'];
+    $title = trim($_POST['title']); // İş başlığını temizle
+    $description = trim($_POST['description']); // Açıklamayı temizle
     $assigned_user_id = !empty($_POST['assigned_user_id']) ? $_POST['assigned_user_id'] : null;
     $start_date = $_POST['start_date'];
     $due_date = $_POST['due_date'];
-    
+
     // TARİH VALİDASYONU: Başlangıç tarihi bitiş tarihinden önce olmalı
     $error = "";
     if (!empty($start_date) && !empty($due_date) && $start_date > $due_date) {
@@ -50,6 +57,7 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
             </div>
             <div class="card-body">
                 <form action="is-ekle.php" method="POST">
+                    <?php echo csrf_input(); ?>
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Müşteri Seçin</label>

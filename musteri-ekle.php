@@ -4,17 +4,24 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
 }
-require_once 'config/db.php'; 
+require_once 'config/db.php';
+require_once 'includes/csrf.php';
 include 'includes/header.php'; 
 
 $message = "";
 
 // Form gönderildiğinde veritabanına kayıt yapalım 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $name = $_POST['name']; [cite: 39]
-    $contact_name = $_POST['contact_name']; [cite: 40]
-    $phone = $_POST['phone']; [cite: 41]
-    $email = $_POST['email']; [cite: 42]
+    // CSRF Token Kontrolü
+    if (!csrf_validate_token($_POST['csrf_token'] ?? '')) {
+        csrf_error();
+    }
+    
+    // Verileri trim() ile temizleyerek alalım
+    $name = trim($_POST['name']);
+    $contact_name = trim($_POST['contact_name']);
+    $phone = trim($_POST['phone']);
+    $email = trim($_POST['email']);
     $created_by = $_SESSION['user_id'];
 
     try {
@@ -40,6 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div>
             <div class="card-body">
                 <form action="musteri-ekle.php" method="POST">
+                    <?php echo csrf_input(); ?>
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Firma / Müşteri Adı *</label>
                         <input type="text" name="name" class="form-control" placeholder="Örn: Winergy Tech" required>

@@ -13,6 +13,7 @@ if ($_SESSION['user_role'] !== 'admin') {
 
 require_once 'config/db.php';
 require_once 'includes/logger.php';
+require_once 'includes/csrf.php';
 include 'includes/header.php';
 
 $error = "";
@@ -20,6 +21,11 @@ $success = "";
 
 // Form gönderildiğinde
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // CSRF Token Kontrolü
+    if (!csrf_validate_token($_POST['csrf_token'] ?? '')) {
+        csrf_error();
+    }
+    
     $name = trim($_POST['name']);
     $email = trim($_POST['email']);
     $password = $_POST['password'];
@@ -85,6 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <div class="card shadow-sm border-0">
             <div class="card-body p-4">
                 <form method="POST" autocomplete="off">
+                    <?php echo csrf_input(); ?>
                     <div class="row">
                         <!-- Ad Soyad -->
                         <div class="col-md-6 mb-3">

@@ -4,7 +4,8 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
 }
-require_once 'config/db.php'; 
+require_once 'config/db.php';
+require_once 'includes/csrf.php'; 
 
 // ID kontrolü
 $id = $_GET['id'] ?? null;
@@ -25,14 +26,24 @@ if (!$job) {
 
 // Form gönderildiğinde güncelle
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // CSRF Token Kontrolü
+    if (!csrf_validate_token($_POST['csrf_token'] ?? '')) {
+        csrf_error();
+    }
+    
+
     $customer_id = $_POST['customer_id'];
     $service_type = $_POST['service_type'];
-    $title = $_POST['title'];
-    $description = $_POST['description'];
+    $title = trim($_POST['title']); // İş başlığını temizle
+    $description = trim($_POST['description']); // Açıklamayı temizle
     $assigned_user_id = !empty($_POST['assigned_user_id']) ? $_POST['assigned_user_id'] : null;
     $start_date = $_POST['start_date'];
     $due_date = $_POST['due_date'];
     $status = $_POST['status'];
+
+
+    
+
     
     // TARİH VALİDASYONU: Başlangıç tarihi bitiş tarihinden önce olmalı
     $error = "";
@@ -95,6 +106,7 @@ include 'includes/header.php';
             </div>
             <div class="card-body">
                 <form method="POST">
+                    <?php echo csrf_input(); ?>
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">Müşteri</label>

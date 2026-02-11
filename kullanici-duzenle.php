@@ -11,7 +11,8 @@ if ($_SESSION['user_role'] !== 'admin') {
     exit;
 }
 
-require_once 'config/db.php'; 
+require_once 'config/db.php';
+require_once 'includes/csrf.php'; 
 
 // ID kontrolü
 $id = $_GET['id'] ?? null;
@@ -34,6 +35,11 @@ $error = "";
 
 // Form gönderildiğinde güncelle
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // CSRF Token Kontrolü
+    if (!csrf_validate_token($_POST['csrf_token'] ?? '')) {
+        csrf_error();
+    }
+    
     $name = trim($_POST['name']);
     $email = trim($_POST['email']);
     $role = $_POST['role'];
@@ -124,6 +130,7 @@ $role_tr = [
         <div class="card shadow-sm border-0">
             <div class="card-body p-4">
                 <form method="POST">
+                    <?php echo csrf_input(); ?>
                     <div class="row">
                         <!-- Ad Soyad -->
                         <div class="col-md-6 mb-3">

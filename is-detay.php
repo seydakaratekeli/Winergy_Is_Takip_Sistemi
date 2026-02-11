@@ -11,7 +11,8 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
 }
-require_once 'config/db.php'; 
+require_once 'config/db.php';
+require_once 'includes/csrf.php'; 
 
 // Cache engelleme
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
@@ -25,6 +26,11 @@ if (!$id) { header("Location: index.php"); exit; }
 
 // --- DURUM GÜNCELLEME İŞLEMİ --- 
 if (isset($_POST['update_status']) && isset($_POST['status'])) {
+    // CSRF Token Kontrolü
+    if (!csrf_validate_token($_POST['csrf_token'] ?? '')) {
+        csrf_error();
+    }
+    
     try {
         // POST verisini al ve temizle
         $new_status = trim($_POST['status']);
@@ -71,6 +77,11 @@ if (isset($_POST['update_status']) && isset($_POST['status'])) {
 
 // --- NOT EKLEME İŞLEMİ ---
 if (isset($_POST['add_note'])) {
+    // CSRF Token Kontrolü
+    if (!csrf_validate_token($_POST['csrf_token'] ?? '')) {
+        csrf_error();
+    }
+    
     $note = $_POST['note'];
     $user_id = $_SESSION['user_id']; // Artık session'dan alabiliriz
     $stmt = $db->prepare("INSERT INTO job_notes (job_id, user_id, note) VALUES (?, ?, ?)");
@@ -82,6 +93,11 @@ if (isset($_POST['add_note'])) {
 
 // --- DOSYA YÜKLEME İŞLEMİ ---
 if (isset($_FILES['job_file']) && $_FILES['job_file']['error'] == 0) {
+    // CSRF Token Kontrolü
+    if (!csrf_validate_token($_POST['csrf_token'] ?? '')) {
+        csrf_error();
+    }
+    
     $file = $_FILES['job_file'];
     
     // Güvenlik kontrolü: Dosya boyutu (max 10MB)
@@ -302,6 +318,7 @@ include 'includes/header.php';
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-body">
                 <form method="POST" class="mb-4">
+                    <?php echo csrf_input(); ?>
                     <textarea name="note" class="form-control mb-2" rows="3" placeholder="Notunuzu buraya yazın..." required></textarea>
                     <button type="submit" name="add_note" class="btn btn-winergy btn-sm">
                         <i class="bi bi-plus-circle"></i> Not Ekle
@@ -340,6 +357,7 @@ include 'includes/header.php';
             <div class="card-header bg-white fw-bold">Durum Yönetimi</div>
             <div class="card-body">
                 <form method="POST" accept-charset="UTF-8" onsubmit="return confirm('İş durumunu güncellemek istediğinize emin misiniz?');">
+                    <?php echo csrf_input(); ?>
                     <div class="mb-3">
                         <label class="form-label small fw-bold">İş Durumu</label>
                         <select name="status" class="form-select" required onchange="this.style.borderColor='#0d6efd';">
@@ -376,6 +394,7 @@ include 'includes/header.php';
             <div class="card-header bg-white fw-bold">Dökümanlar</div>
             <div class="card-body">
                 <form method="POST" enctype="multipart/form-data" class="mb-3">
+                    <?php echo csrf_input(); ?>
                     <input type="file" name="job_file" class="form-control form-control-sm mb-2" required>
                     <button type="submit" class="btn btn-winergy btn-sm w-100">
                         <i class="bi bi-upload"></i> Dosya Yükle

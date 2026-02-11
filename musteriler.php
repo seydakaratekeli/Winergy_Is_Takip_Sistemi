@@ -4,7 +4,8 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: login.php"); 
     exit; 
 }
-require_once 'config/db.php'; 
+require_once 'config/db.php';
+require_once 'includes/csrf.php';
 include 'includes/header.php'; 
 
 // --- ARAMA MANTIĞI ---
@@ -30,14 +31,20 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // --- YENİ MÜŞTERİ EKLEME ---
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_customer'])) {
+    // CSRF Token Kontrolü
+    if (!csrf_validate_token($_POST['csrf_token'] ?? '')) {
+        csrf_error();
+    }
+    
     $name = $_POST['name'];
     $contact = $_POST['contact_name'];
     $phone = $_POST['phone'];
     $email = $_POST['email'];
+    $address = $_POST['address'];
     $created_by = $_SESSION['user_id'];
 
-    $ins = $db->prepare("INSERT INTO customers (name, contact_name, phone, email, created_by) VALUES (?, ?, ?, ?, ?)");
-    if ($ins->execute([$name, $contact, $phone, $email, $created_by])) {
+    $ins = $db->prepare("INSERT INTO customers (name, contact_name, phone, email, address, created_by) VALUES (?, ?, ?, ?, ?, ?)");
+    if ($ins->execute([$name, $contact, $phone, $email, $address, $created_by])) {
         echo "<div class='alert alert-success'>Müşteri başarıyla kaydedildi.</div>";
         // Listeyi yenilemek için sayfayı tekrar yükle
         echo "<script>window.location.href='musteriler.php';</script>";
@@ -59,6 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_customer'])) {
     <div class="card card-body shadow-sm border-0">
         <h5 class="fw-bold mb-3">Yeni Müşteri Kaydı Oluştur</h5>
         <form method="POST" class="row g-3">
+            <?php echo csrf_input(); ?>
             <div class="col-md-3">
                 <input type="text" name="name" class="form-control form-control-sm" placeholder="Firma Adı" required>
             </div>
@@ -71,8 +79,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_customer'])) {
             <div class="col-md-2">
                 <input type="email" name="email" class="form-control form-control-sm" placeholder="E-Posta">
             </div>
-            <div class="col-md-2">
-                <button type="submit" name="add_customer" class="btn btn-winergy btn-sm w-100"><i class="bi bi-check-circle me-1"></i>Kaydet</button>
+            <div class="col-md-9">
+                <textarea name="address" class="form-control form-control-sm" placeholder="Adres" rows="2"></textarea>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" name="add_customer" class="btn btn-winergy btn-sm w-100 h-100"><i class="bi bi-check-circle me-1"></i>Kaydet</button>
             </div>
         </form>
     </div>

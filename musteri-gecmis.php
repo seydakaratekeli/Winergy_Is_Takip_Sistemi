@@ -218,6 +218,13 @@ include 'includes/header.php';
                         <span class="ms-3"><?php echo htmlspecialchars($customer['email']); ?></span>
                     </div>
                     <?php endif; ?>
+                    <?php if($customer['address']): ?>
+                    <div class="mb-2">
+                        <i class="bi bi-geo-alt me-1 text-muted"></i>
+                        <strong>Adres:</strong><br>
+                        <span class="ms-3"><?php echo nl2br(htmlspecialchars($customer['address'])); ?></span>
+                    </div>
+                    <?php endif; ?>
                     <hr>
                     <div class="mb-2">
                         <i class="bi bi-calendar-event me-1 text-muted"></i>

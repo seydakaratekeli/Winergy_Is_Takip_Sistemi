@@ -13,6 +13,7 @@ if ($_SESSION['user_role'] !== 'admin') {
 
 require_once 'config/db.php';
 require_once 'includes/logger.php';
+require_once 'includes/csrf.php';
 include 'includes/header.php';
 
 // Filtreleme parametreleri
@@ -43,6 +44,11 @@ $stats = get_log_statistics();
 
 // Log temizleme
 if (isset($_POST['cleanup_logs'])) {
+    // CSRF Token Kontrolü
+    if (!csrf_validate_token($_POST['csrf_token'] ?? '')) {
+        csrf_error();
+    }
+    
     $days = intval($_POST['cleanup_days'] ?? 30);
     $deleted = cleanup_old_logs($days);
     $success_message = "$deleted adet eski log dosyası temizlendi.";
@@ -238,6 +244,7 @@ if (isset($_POST['cleanup_logs'])) {
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST">
+                <?php echo csrf_input(); ?>
                 <div class="modal-body">
                     <p>Kaç günden eski logları temizlemek istersiniz?</p>
                     <div class="mb-3">
