@@ -71,8 +71,8 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
             echo "$count iş kaydının durumu güncellendi.";
         } elseif ($_GET['success'] == 'assigned') {
             echo "$count iş kaydı atandı.";
-        } elseif ($_GET['success'] == 'deleted') {
-            echo "$count iş kaydı silindi.";
+        } elseif ($_GET['success'] == 'deleted' || $_GET['success'] == 'cancelled') {
+            echo "$count iş kaydı iptal edildi.";
         }
         ?>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -211,7 +211,7 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
                         <option value="change_status">Durum Değiştir</option>
                         <option value="assign_user">Personel Ata</option>
                         <?php if($_SESSION['user_role'] === 'admin'): ?>
-                            <option value="delete">Sil</option>
+                            <option value="delete">İptal Et (Soft Delete)</option>
                         <?php endif; ?>
                     </select>
                 </div>
@@ -249,7 +249,7 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
                 </div>
                 
                 <div class="col-lg-3 col-md-6">
-                    <button type="submit" class="btn btn-winergy w-100" style="font-size: 1.6rem; padding: 1.2rem;" onclick="return confirm('Seçili işleri güncellemek istediğinize emin misiniz?');">
+                    <button type="submit" class="btn btn-winergy w-100" id="bulkSubmitBtn" style="font-size: 1.6rem; padding: 1.2rem;">
                         <i class="bi bi-check-circle me-2"></i>Uygula (<span id="selectedCount">0</span> İş)
                     </button>
                 </div>
@@ -444,6 +444,27 @@ document.getElementById('bulkActionsForm').addEventListener('submit', function(e
     if (checkedBoxes.length === 0) {
         e.preventDefault();
         alert('Lütfen en az bir iş seçin!');
+        return false;
+    }
+    
+    // İşleme göre özel onay mesajı
+    const action = document.getElementById('bulkAction').value;
+    let confirmMsg = 'Seçili işleri güncellemek istediğinize emin misiniz?';
+    
+    if (action === 'delete') {
+        confirmMsg = `${checkedBoxes.length} adet iş kaydını iptal etmek istediğinizden emin misiniz?\n\n` +
+                     `⚠️ İşler "İptal" durumuna alınacaktır.\n` +
+                     `✓ Veriler silinmez, gerekirse geri alınabilir.`;
+    } else if (action === 'change_status') {
+        const newStatus = document.querySelector('[name="new_status"]').value;
+        confirmMsg = `${checkedBoxes.length} adet işin durumunu "${newStatus}" olarak değiştirmek istiyor musunuz?`;
+    } else if (action === 'assign_user') {
+        const userName = document.querySelector('[name="assign_user_id"] option:checked').text;
+        confirmMsg = `${checkedBoxes.length} adet işi "${userName}" kişisine atamak istiyor musunuz?`;
+    }
+    
+    if (!confirm(confirmMsg)) {
+        e.preventDefault();
         return false;
     }
     

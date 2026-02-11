@@ -69,23 +69,14 @@ try {
             break;
             
         case 'delete':
-            // Önce ilişkili notları sil
-            $sql_notes = "DELETE FROM job_notes WHERE job_id IN ($placeholders)";
-            $stmt_notes = $db->prepare($sql_notes);
-            $stmt_notes->execute($job_ids);
-            
-            // İlişkili dosyaları sil
-            $sql_files = "DELETE FROM job_files WHERE job_id IN ($placeholders)";
-            $stmt_files = $db->prepare($sql_files);
-            $stmt_files->execute($job_ids);
-            
-            // İşleri sil
-            $sql = "DELETE FROM jobs WHERE id IN ($placeholders)";
+            // Soft delete - İşleri "İptal" durumuna al (Veri kaybı önlenir)
+            $sql = "UPDATE jobs SET status = 'İptal', updated_by = ?, updated_at = NOW() WHERE id IN ($placeholders)";
+            $params = array_merge([$_SESSION['user_id']], $job_ids);
             $stmt = $db->prepare($sql);
-            $stmt->execute($job_ids);
+            $stmt->execute($params);
             
-            header("Location: index.php?success=deleted&count=" . $stmt->rowCount());
-            log_activity('İşler Silindi', "Seçili işler silindi: " . implode(', ', $job_ids), 'INFO');
+            log_activity('İşler İptal Edildi', "Seçili işler iptal edildi (soft delete): " . implode(', ', $job_ids), 'INFO');
+            header("Location: index.php?success=cancelled&count=" . $stmt->rowCount());
             break;
             
         default:
