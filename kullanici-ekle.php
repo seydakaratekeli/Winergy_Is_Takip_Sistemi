@@ -17,7 +17,7 @@ require_once 'includes/csrf.php';
 include 'includes/header.php';
 
 $error = "";
-$success = ""; //silebilirsin
+
 
 // Form gönderildiğinde
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -56,12 +56,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             try {
                 $stmt = $db->prepare("INSERT INTO users (name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?)");
                 if ($stmt->execute([$name, $email, $hashed_password, $role, $is_active])) {
-                    log_activity('Kullanıcı Eklendi', "Yeni Kullanıcı: $name (E-Posta: $email, Rol: $role)", 'SUCCESS');
+                    log_activity('Kullanıcı Eklendi', "Yeni Kullanıcı: $name", 'SUCCESS');
                     header("Location: kullanicilar.php?added=1");
                     exit;
                 }
             } catch (PDOException $e) {
-                $error = "Kullanıcı eklenirken hata oluştu: " . $e->getMessage();
+                log_error("Kullanıcı ekleme hatası", ['message' => $e->getMessage(), 'email' => $email]);
+                $error = "Sistem kaynaklı bir hata oluştu, kullanıcı şu an kaydedilemiyor.";
             }
         }
     }

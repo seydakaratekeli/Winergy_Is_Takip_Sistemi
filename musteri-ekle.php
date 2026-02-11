@@ -31,11 +31,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt = $db->prepare($sql);
         
         if ($stmt->execute([$name, $contact_name, $phone, $email, $created_by])) {
-            log_activity('Müşteri Eklendi', "Yeni Müşteri: $name (Kontak: $contact_name)", 'SUCCESS');
+            log_activity('Müşteri Eklendi', "Yeni Müşteri: $name", 'SUCCESS');
             $message = "<div class='alert alert-success'>Müşteri başarıyla eklendi! <a href='musteriler.php' class='alert-link'>Listeye dön</a></div>";
         }
     } catch (PDOException $e) {
-        $message = "<div class='alert alert-danger'>Hata oluştu: " . $e->getMessage() . "</div>";
+        // Hatayı arka planda kaydet
+        log_error("Müşteri ekleme hatası", ['message' => $e->getMessage(), 'customer' => $name]);
+        // Kullanıcıya temiz bir hata mesajı ver
+        $message = "<div class='alert alert-danger'>Müşteri kaydedilirken teknik bir sorun oluştu. Lütfen bilgileri kontrol edip tekrar deneyin.</div>";
     }
 }
 ?>

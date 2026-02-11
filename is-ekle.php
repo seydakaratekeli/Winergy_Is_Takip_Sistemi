@@ -34,13 +34,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($error) {
         echo "<div class='alert alert-danger'><i class='bi bi-exclamation-triangle-fill'></i> $error</div>";
     } else {
-        $sql = "INSERT INTO jobs (customer_id, service_type, title, description, assigned_user_id, start_date, due_date, status, created_by) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, 'Açıldı', ?)"; // Varsayılan durum: Açıldı 
-        
-        $stmt = $db->prepare($sql);
-        if ($stmt->execute([$customer_id, $service_type, $title, $description, $assigned_user_id, $start_date, $due_date, $_SESSION['user_id']])) {
-        log_activity('İş Açıldı', "Yeni İş: $title (Hizmet: $service_type)", 'SUCCESS');    
-        echo "<div class='alert alert-success'>İş kaydı başarıyla açıldı! <a href='index.php'>Listeye dön</a></div>";
+        try {
+            $sql = "INSERT INTO jobs (customer_id, service_type, title, description, assigned_user_id, start_date, due_date, status, created_by) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'Açıldı', ?)";
+            
+            $stmt = $db->prepare($sql);
+            if ($stmt->execute([$customer_id, $service_type, $title, $description, $assigned_user_id, $start_date, $due_date, $_SESSION['user_id']])) {
+                log_activity('İş Açıldı', "Yeni İş: $title", 'SUCCESS');    
+                echo "<div class='alert alert-success'>İş kaydı başarıyla açıldı! <a href='index.php'>Listeye dön</a></div>";
+            }
+        } catch (PDOException $e) {
+            log_error("İş ekleme hatası", ['message' => $e->getMessage(), 'title' => $title]);
+            echo "<div class='alert alert-danger'>İş kaydı oluşturulurken bir sorun oluştu. Lütfen sistem yöneticisine danışın.</div>";
         }
     }
 }
@@ -105,11 +110,13 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
                                     'operasyon' => 'Operasyon',
                                     'danisman' => 'Danışman'
                                 ];
+                                
+
                                 foreach($users as $u): 
                                     $role_label = $role_tr[$u['role']] ?? $u['role'];
                                 ?>
                                     <option value="<?php echo $u['id']; ?>">
-                                        <?php echo $u['name']; ?> (<?php echo $role_label; ?>)
+                                        <?php echo htmlspecialchars($u['name']); ?> (<?php echo htmlspecialchars($role_label); ?>)
                                     </option>
                                 <?php endforeach; ?>
                             </select>
