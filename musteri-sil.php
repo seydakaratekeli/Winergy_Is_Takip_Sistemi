@@ -77,49 +77,63 @@ include 'includes/header.php';
             </div>
             <div class="card-body">
                 <?php if(isset($error)): ?>
-                    <div class="alert alert-danger">
-                        <i class="bi bi-exclamation-circle"></i> <?php echo $error; ?>
+                    <div class="card border-danger mb-3">
+                        <div class="card-header bg-danger text-white">
+                            <h6 class="mb-0"><i class="bi bi-exclamation-circle"></i> Hata</h6>
+                        </div>
+                        <div class="card-body">
+                            <?php echo $error; ?>
+                        </div>
                     </div>
                 <?php endif; ?>
                 
-                <div class="alert alert-warning border-warning">
-                    <h6 class="fw-bold mb-3">Aşağıdaki müşteriyi silmek üzeresiniz:</h6>
-                    <table class="table table-sm table-borderless mb-0">
-                        <tr>
-                            <td class="fw-bold" width="150">Müşteri Adı:</td>
-                            <td><?php echo htmlspecialchars($customer['name']); ?></td>
-                        </tr>
-                        <?php if($customer['contact_name']): ?>
-                        <tr>
-                            <td class="fw-bold">İlgili Kişi:</td>
-                            <td><?php echo htmlspecialchars($customer['contact_name']); ?></td>
-                        </tr>
-                        <?php endif; ?>
-                        <?php if($customer['phone']): ?>
-                        <tr>
-                            <td class="fw-bold">Telefon:</td>
-                            <td><?php echo htmlspecialchars($customer['phone']); ?></td>
-                        </tr>
-                        <?php endif; ?>
-                        <tr>
-                            <td class="fw-bold">İlişkili İş Sayısı:</td>
-                            <td>
-                                <span class="badge <?php echo $customer['job_count'] > 0 ? 'bg-danger' : 'bg-success'; ?>">
-                                    <?php echo $customer['job_count']; ?> iş
-                                </span>
-                            </td>
-                        </tr>
-                    </table>
+                <div class="card border-warning mb-3">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="mb-0 fw-bold"><i class="bi bi-info-circle"></i> Müşteri Bilgileri</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-3">Aşağıdaki müşteriyi silmek üzeresiniz:</p>
+                        <table class="table table-sm table-borderless mb-0">
+                            <tr>
+                                <td class="fw-bold" width="150">Müşteri Adı:</td>
+                                <td><?php echo htmlspecialchars($customer['name']); ?></td>
+                            </tr>
+                            <?php if($customer['contact_name']): ?>
+                            <tr>
+                                <td class="fw-bold">İlgili Kişi:</td>
+                                <td><?php echo htmlspecialchars($customer['contact_name']); ?></td>
+                            </tr>
+                            <?php endif; ?>
+                            <?php if($customer['phone']): ?>
+                            <tr>
+                                <td class="fw-bold">Telefon:</td>
+                                <td><?php echo htmlspecialchars($customer['phone']); ?></td>
+                            </tr>
+                            <?php endif; ?>
+                            <tr>
+                                <td class="fw-bold">İlişkili İş Sayısı:</td>
+                                <td>
+                                    <span class="badge <?php echo $customer['job_count'] > 0 ? 'bg-danger' : 'bg-success'; ?>">
+                                        <?php echo $customer['job_count']; ?> iş
+                                    </span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
                 </div>
 
                 <?php if ($customer['job_count'] > 0): ?>
-                    <div class="alert alert-danger">
-                        <h6 class="fw-bold">⚠️ Dikkat:</h6>
-                        <ul class="mb-0">
-                            <li>Bu müşteriye ait <strong><?php echo $customer['job_count']; ?> adet iş kaydı</strong> bulunmaktadır.</li>
-                            <li>Bu işlere ait <strong>notlar, dosyalar ve tüm veriler silinecektir!</strong></li>
-                            <li>Bu işlem geri alınamaz.</li>
-                        </ul>
+                    <div class="card border-danger mb-3">
+                        <div class="card-header bg-danger text-white">
+                            <h6 class="mb-0 fw-bold"><i class="bi bi-exclamation-triangle"></i> Dikkat</h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="mb-0">
+                                <li>Bu müşteriye ait <strong><?php echo $customer['job_count']; ?> adet iş kaydı</strong> bulunmaktadır.</li>
+                                <li>Bu işlere ait <strong>notlar, dosyalar ve tüm veriler silinecektir!</strong></li>
+                                <li>Bu işlem geri alınamaz.</li>
+                            </ul>
+                        </div>
                     </div>
 
                     <!-- İlişkili işleri göster -->
@@ -169,9 +183,13 @@ include 'includes/header.php';
             </div>
         </div>
 
-        <div class="alert alert-info mt-3">
-            <i class="bi bi-info-circle"></i> <strong>Alternatif:</strong> Müşteriyi silmek yerine, 
-            <a href="musteri-duzenle.php?id=<?php echo $id; ?>" class="alert-link">düzenleyebilirsiniz</a>.
+        <div class="card border-info mt-3">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="bi bi-lightbulb"></i> Alternatif</h6>
+            </div>
+            <div class="card-body">
+                Müşteriyi silmek yerine, <a href="musteri-duzenle.php?id=<?php echo $id; ?>" class="fw-bold">düzenleyebilirsiniz</a>.
+            </div>
         </div>
     </div>
 </div>

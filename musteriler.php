@@ -130,6 +130,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_customer'])) {
                 </td>
                 <td class="text-center">
                     <div class="btn-group" role="group">
+                        <a href="musteri-gecmis.php?id=<?php echo $c['id']; ?>" class="btn btn-sm btn-outline-info" title="Geçmiş">
+                            <i class="bi bi-clock-history"></i>
+                        </a>
                         <a href="is-ekle.php?customer_id=<?php echo $c['id']; ?>" class="btn btn-sm btn-outline-success" title="Yeni İş Aç">
                             <i class="bi bi-plus-circle"></i>
                         </a>
