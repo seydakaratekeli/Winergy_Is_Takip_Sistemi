@@ -6,6 +6,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 require_once 'config/db.php';
 require_once 'includes/csrf.php'; 
+require_once 'includes/logger.php';
 
 // ID kontrolü
 $id = $_GET['id'] ?? null;
@@ -70,7 +71,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         $stmt = $db->prepare($sql);
         if ($stmt->execute([$customer_id, $service_type, $title, $description, $assigned_user_id, $start_date, $due_date, $status, $_SESSION['user_id'], $id])) {
-            header("Location: is-detay.php?id=$id&updated=1");
+        log_activity('İş Güncellendi', "İş Başlığı: $title (ID: $id)", 'INFO');    
+        header("Location: is-detay.php?id=$id&updated=1");
             exit;
         }
     }

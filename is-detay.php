@@ -13,6 +13,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 require_once 'config/db.php';
 require_once 'includes/csrf.php'; 
+require_once 'includes/logger.php'; // Sayfanın başına ekleyin
 
 // Cache engelleme
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
@@ -58,6 +59,7 @@ if (isset($_POST['update_status']) && isset($_POST['status'])) {
         
         if ($result) {
             error_log("✓ Güncelleme başarılı - ID: $id, Yeni Durum: '$new_status'");
+            log_activity('İş Durumu Güncellendi', "İş ID: $id için yeni durum: '$new_status'", 'INFO');
             error_log("===============================");
             header("Location: is-detay.php?id=$id&success=1");
             exit;
@@ -86,6 +88,7 @@ if (isset($_POST['add_note'])) {
     $user_id = $_SESSION['user_id']; // Artık session'dan alabiliriz
     $stmt = $db->prepare("INSERT INTO job_notes (job_id, user_id, note) VALUES (?, ?, ?)");
     if ($stmt->execute([$id, $user_id, $note])) {
+        log_activity('İş Notu Eklendi', "İş ID: $id için yeni not eklendi.", 'INFO');
         header("Location: is-detay.php?id=$id&note_success=1");
         exit;
     }
@@ -131,6 +134,7 @@ if (isset($_FILES['job_file']) && $_FILES['job_file']['error'] == 0) {
     if (move_uploaded_file($file['tmp_name'], $file_path)) {
         $stmt = $db->prepare("INSERT INTO job_files (job_id, file_name, file_path, uploaded_by) VALUES (?, ?, ?, ?)");
         if ($stmt->execute([$id, $file['name'], $file_path, $_SESSION['user_id']])) {
+            log_activity('İş Dosyası Yüklendi', "İş ID: $id için yeni dosya yüklendi: {$file['name']}", 'INFO');
             header("Location: is-detay.php?id=$id&file_success=1");
             exit;
         }

@@ -13,6 +13,7 @@ if ($_SESSION['user_role'] !== 'admin') {
 
 require_once 'config/db.php';
 require_once 'includes/csrf.php'; 
+require_once 'includes/logger.php';
 
 // ID kontrolü
 $id = $_GET['id'] ?? null;
@@ -81,11 +82,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 }
                 
                 if (!$error) {
+                    log_activity('Kullanıcı Güncellendi', "Kullanıcı ID: $id için güncelleme başarılı.", 'INFO');
                     header("Location: kullanicilar.php?updated=1");
                     exit;
                 }
             } catch (PDOException $e) {
                 $error = "Güncelleme hatası: " . $e->getMessage();
+                log_activity('Kullanıcı Güncelleme Hatası', "Kullanıcı ID: $id için güncelleme hatası: " . $e->getMessage(), 'ERROR');
             }
         }
     }

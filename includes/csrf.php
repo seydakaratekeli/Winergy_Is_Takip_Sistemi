@@ -54,6 +54,16 @@ function csrf_input() {
  * CSRF Hatası Göster ve Programı Durdur
  */
 function csrf_error() {
+    // 1. Önce hatayı loglayalım
+    // logger.php'nin dahil olduğundan emin olmak için kontrol edelim
+    if (function_exists('log_activity')) {
+        log_activity(
+            'CSRF Güvenlik Hatası', 
+            'Geçersiz veya süresi dolmuş token ile form gönderim denemesi reddedildi.', 
+            'WARNING'
+        );
+    }
+
     http_response_code(403);
     die('
         <div style="font-family: Arial; max-width: 600px; margin: 100px auto; text-align: center;">

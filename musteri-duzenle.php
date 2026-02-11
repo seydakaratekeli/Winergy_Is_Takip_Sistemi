@@ -6,6 +6,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 require_once 'config/db.php';
 require_once 'includes/csrf.php'; 
+require_once 'includes/logger.php';
 
 // ID kontrolü
 $id = $_GET['id'] ?? null;
@@ -58,6 +59,7 @@ if (isset($_POST['add_note'])) {
         try {
             $stmt = $db->prepare("INSERT INTO customer_notes (customer_id, user_id, note, note_type) VALUES (?, ?, ?, ?)");
             $stmt->execute([$id, $user_id, $note, $note_type]);
+            log_activity('Müşteri Notu Eklendi', "Müşteri ID: $id için yeni not eklendi.", 'INFO');
             header("Location: musteri-duzenle.php?id=$id&note_added=1");
             exit;
         } catch (PDOException $e) {
@@ -93,7 +95,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !isset($_POST['add_note'])) {
         $stmt = $db->prepare($sql);
         
         if ($stmt->execute([$name, $contact_name, $phone, $email, $address, $updated_by, $id])) {
-            header("Location: musteriler.php?updated=1");
+        log_activity('Müşteri Güncellendi', "Firma: $name (ID: $id)", 'INFO');    
+        header("Location: musteriler.php?updated=1");
             exit;
         }
     } catch (PDOException $e) {

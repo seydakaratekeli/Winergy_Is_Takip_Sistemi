@@ -40,6 +40,7 @@ if (isset($_POST['confirm_delete'])) {
         header("Location: index.php?deleted=1");
         exit;
     } else {
+        log_activity('İş İptal Edilemedi', "İş ID: $id iptal edilemedi.", 'ERROR');
         header("Location: is-detay.php?id=$id&error=delete_failed");
         exit;
     }

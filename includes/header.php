@@ -276,8 +276,8 @@
             
             <ul class="navbar-nav ms-2">
                 <li class="nav-item me-2">
-                    <a class="btn btn-light text-dark fw-bold my-2 px-3" href="is-ekle.php" style="border-radius: 8px; font-size: 1rem;">
-                        <i class="bi bi-plus-circle-fill me-1"></i> Yeni İş
+                    <a class="btn btn-light text-dark fw-bold my-2 px-3" href="is-ekle.php" style="border-radius: 8px; font-size: 1.3rem;">
+                        <i class="bi bi-plus-circle-fill me-1"></i> İş Kayıt
                     </a>
                 <li class="nav-item dropdown">
                     <button class="btn btn-outline-light dropdown-toggle my-2 px-3" type="button" data-bs-toggle="dropdown" style="border-radius: 8px; font-size: 1.5rem; min-width: 160px;">
