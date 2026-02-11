@@ -4,8 +4,10 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
 }
+
 require_once 'config/db.php';
 require_once 'includes/csrf.php';
+require_once 'includes/logger.php';
 include 'includes/header.php'; 
 
 $message = "";
@@ -29,6 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt = $db->prepare($sql);
         
         if ($stmt->execute([$name, $contact_name, $phone, $email, $created_by])) {
+            log_activity('Müşteri Eklendi', "Yeni Müşteri: $name (Kontak: $contact_name)", 'SUCCESS');
             $message = "<div class='alert alert-success'>Müşteri başarıyla eklendi! <a href='musteriler.php' class='alert-link'>Listeye dön</a></div>";
         }
     } catch (PDOException $e) {

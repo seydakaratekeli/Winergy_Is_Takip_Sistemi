@@ -6,6 +6,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 require_once 'config/db.php'; 
 require_once 'includes/csrf.php'; // CSRF Koruması
+require_once 'includes/logger.php';
 
 // ID kontrolü
 $id = $_GET['id'] ?? null;
@@ -35,6 +36,7 @@ if (isset($_POST['confirm_delete'])) {
     $stmt = $db->prepare("UPDATE jobs SET status = 'İptal' WHERE id = ?");
     
     if ($stmt->execute([$id])) {
+        log_activity('İş İptal Edildi', "İptal Edilen İş: {$job['title']} (ID: {$id})", 'SUCCESS');
         header("Location: index.php?deleted=1");
         exit;
     } else {

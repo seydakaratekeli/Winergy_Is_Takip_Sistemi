@@ -39,7 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         $stmt = $db->prepare($sql);
         if ($stmt->execute([$customer_id, $service_type, $title, $description, $assigned_user_id, $start_date, $due_date, $_SESSION['user_id']])) {
-            echo "<div class='alert alert-success'>İş kaydı başarıyla açıldı! <a href='index.php'>Listeye dön</a></div>";
+        log_activity('İş Açıldı', "Yeni İş: $title (Hizmet: $service_type)", 'SUCCESS');    
+        echo "<div class='alert alert-success'>İş kaydı başarıyla açıldı! <a href='index.php'>Listeye dön</a></div>";
         }
     }
 }

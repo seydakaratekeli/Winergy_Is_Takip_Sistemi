@@ -6,6 +6,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 require_once 'config/db.php'; 
 require_once 'includes/csrf.php'; // CSRF Koruması
+require_once 'includes/logger.php';
 
 // ID kontrolü
 $id = $_GET['id'] ?? null;
@@ -55,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_delete'])) {
             // Müşteriyi sil
             $stmt = $db->prepare("DELETE FROM customers WHERE id = ?");
             if ($stmt->execute([$id])) {
-                header("Location: musteriler.php?deleted=1");
+                log_activity('Müşteri Silindi', "Silinen Müşteri: {$customer['name']} (ID: {$customer['id']})", 'SUCCESS');
                 exit;
             }
         }
