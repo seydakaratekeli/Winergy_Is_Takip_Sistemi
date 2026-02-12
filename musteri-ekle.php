@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label small fw-bold">Telefon</label>
-                            <input type="text" name="phone" class="form-control" placeholder="05xx xxx xx xx">
+                            <input type="text" name="phone" class="form-control phone-input" placeholder="0555 123 4567" maxlength="14">
                         </div>
 
                         <div class="col-md-6 mb-3">

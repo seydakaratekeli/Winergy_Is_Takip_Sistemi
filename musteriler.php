@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_customer'])) {
                 <input type="text" name="contact_name" class="form-control form-control-sm" placeholder="İlgili Kişi">
             </div>
             <div class="col-md-2">
-                <input type="text" name="phone" class="form-control form-control-sm" placeholder="Telefon">
+                <input type="text" name="phone" class="form-control form-control-sm phone-input" placeholder="0555 123 4567" maxlength="14">
             </div>
             <div class="col-md-2">
                 <input type="email" name="email" class="form-control form-control-sm" placeholder="E-Posta">
@@ -91,13 +91,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_customer'])) {
 
 <div class="card shadow-sm border-0 mb-4">
     <div class="card-body">
-        <form method="GET" class="d-flex gap-2">
-            <input type="text" name="search" class="form-control flex-grow-1" style="max-width: 500px;" placeholder="Firma adı veya ilgili kişi ara..." value="<?php echo htmlspecialchars($search); ?>">
-            <button type="submit" class="btn btn-primary px-4 flex-shrink-0">Ara</button>
-            <?php if(!empty($search)): ?>
-                <a href="musteriler.php" class="btn btn-outline-secondary flex-shrink-0">Temizle</a>
-            <?php endif; ?>
-        </form>
+        <div class="row">
+            <div class="col-md-8">
+                <form method="GET" class="d-flex gap-2">
+                    <input type="text" name="search" class="form-control flex-grow-1" style="max-width: 500px;" placeholder="Firma adı veya ilgili kişi ara..." value="<?php echo htmlspecialchars($search); ?>">
+                    <button type="submit" class="btn btn-primary px-4 flex-shrink-0">Ara</button>
+                    <?php if(!empty($search)): ?>
+                        <a href="musteriler.php" class="btn btn-outline-secondary flex-shrink-0">Temizle</a>
+                    <?php endif; ?>
+                </form>
+            </div>
+            <div class="col-md-4 text-end">
+                <!-- Export Butonları -->
+                <button type="button" class="btn btn-success btn-sm" id="exportSelectedCustomersBtn" style="display: none;" onclick="exportSelectedCustomers()">
+                    <i class="bi bi-file-earmark-excel me-1"></i>Seçilenleri Aktar (<span id="exportCustomerCount">0</span>)
+                </button>
+                <a href="export-musteriler.php?<?php echo http_build_query(['search' => $search]); ?>" class="btn btn-outline-success btn-sm">
+                    <i class="bi bi-file-earmark-excel me-1"></i>Excel'e Aktar
+                </a>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -105,6 +118,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_customer'])) {
     <table class="table table-hover align-middle mb-0">
         <thead class="table-light">
             <tr>
+                <th style="width: 40px;">
+                    <input type="checkbox" class="form-check-input" id="selectAllCustomers">
+                </th>
                 <th class="ps-4">Müşteri / Firma Adı</th>
                 <th>İlgili Kişi</th>
                 <th>İletişim Bilgileri</th>
@@ -115,6 +131,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_customer'])) {
         <tbody>
             <?php foreach($customers as $c): ?>
             <tr>
+                <td>
+                    <input type="checkbox" class="form-check-input customer-checkbox" value="<?php echo $c['id']; ?>">
+                </td>
                 <td class="ps-4"><strong><?php echo $c['name']; ?></strong></td>
                 <td><?php echo $c['contact_name'] ?: '<span class="text-muted">Belirtilmedi</span>'; ?></td>
                 <td>
@@ -158,10 +177,64 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_customer'])) {
             </tr>
             <?php endforeach; ?>
             <?php if(empty($customers)): ?>
-                <tr><td colspan="5" class="text-center py-5 text-muted">Aranan kriterlere uygun müşteri bulunamadı.</td></tr>
+                <tr><td colspan="6" class="text-center py-5 text-muted">Aranan kriterlere uygun müşteri bulunamadı.</td></tr>
             <?php endif; ?>
         </tbody>
     </table>
 </div>
+
+<script>
+// Tüm müşterileri seç/bırak
+document.getElementById('selectAllCustomers')?.addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.customer-checkbox');
+    checkboxes.forEach(cb => cb.checked = this.checked);
+    updateCustomerExportBtn();
+});
+
+// Tek checkbox değişimi
+document.querySelectorAll('.customer-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        updateCustomerExportBtn();
+        
+        const allChecked = document.querySelectorAll('.customer-checkbox:checked').length === document.querySelectorAll('.customer-checkbox').length;
+        const selectAll = document.getElementById('selectAllCustomers');
+        if (selectAll) selectAll.checked = allChecked;
+    });
+});
+
+// Export butonu görünürlüğünü güncelle
+function updateCustomerExportBtn() {
+    const count = document.querySelectorAll('.customer-checkbox:checked').length;
+    const btn = document.getElementById('exportSelectedCustomersBtn');
+    const countSpan = document.getElementById('exportCustomerCount');
+    
+    if (btn) btn.style.display = count > 0 ? 'inline-block' : 'none';
+    if (countSpan) countSpan.textContent = count;
+}
+
+// Seçili müşterileri export et
+function exportSelectedCustomers() {
+    const checkedBoxes = document.querySelectorAll('.customer-checkbox:checked');
+    if (checkedBoxes.length === 0) {
+        alert('Lütfen en az bir müşteri seçin!');
+        return;
+    }
+    
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = 'export-musteriler.php<?php echo !empty($search) ? '?search=' . urlencode($search) : ''; ?>';
+    
+    checkedBoxes.forEach(cb => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'selected_customers[]';
+        input.value = cb.value;
+        form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+</script>
 
 <?php include 'includes/footer.php'; ?>

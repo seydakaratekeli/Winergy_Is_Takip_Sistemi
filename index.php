@@ -174,7 +174,7 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
                 </select>
             </div>
 
-            <div class="col-lg-4 col-md-6">
+            <div class="col-lg-3 col-md-6">
                 <label class="form-label small fw-bold text-muted mb-2">
                     <i class="bi bi-flag me-1"></i>İş Durumu
                 </label>
@@ -185,6 +185,20 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
                     <option value="Beklemede" <?php echo ($_GET['status'] ?? '') == 'Beklemede' ? 'selected' : ''; ?>>Beklemede</option>
                     <option value="Tamamlandı" <?php echo ($_GET['status'] ?? '') == 'Tamamlandı' ? 'selected' : ''; ?>>Tamamlandı</option>
                 </select>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+                <label class="form-label small fw-bold text-muted mb-2">
+                    <i class="bi bi-calendar-range me-1"></i>Başlangıç Tarihi
+                </label>
+                <input type="date" name="date_start" class="form-control border-light-subtle" style="border-radius: 0.6rem;" value="<?php echo htmlspecialchars($_GET['date_start'] ?? ''); ?>">
+            </div>
+
+            <div class="col-lg-2 col-md-6">
+                <label class="form-label small fw-bold text-muted mb-2">
+                    <i class="bi bi-calendar-check me-1"></i>Bitiş Tarihi
+                </label>
+                <input type="date" name="date_end" class="form-control border-light-subtle" style="border-radius: 0.6rem;" value="<?php echo htmlspecialchars($_GET['date_end'] ?? ''); ?>">
             </div>
 
             <div class="col-lg-4 col-md-12 d-flex gap-2">
@@ -265,9 +279,18 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
         <h5 class="mb-0 fw-bold" style="font-size: 2rem;">
             <i class="bi bi-list-check me-2 text-primary"></i>İş Listesi
         </h5>
-        <span class="badge bg-primary px-4 py-3" style="font-size: 1.5rem; border-radius: 1rem;">
-            <i class="bi bi-folder2-open me-2"></i>Toplam: <?php echo count($jobs); ?> İş
-        </span>
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <!-- Export Butonları -->
+            <button type="button" class="btn btn-success" id="exportSelectedBtn" style="display: none;" onclick="exportSelected()">
+                <i class="bi bi-file-earmark-excel me-1"></i>Seçilenleri Aktar (<span id="exportCount">0</span>)
+            </button>
+            <a href="export-isler.php?<?php echo http_build_query($_GET); ?>" class="btn btn-outline-success">
+                <i class="bi bi-file-earmark-excel me-1"></i>Tümünü Excel'e Aktar
+            </a>
+            <span class="badge bg-primary px-4 py-3" style="font-size: 1.5rem; border-radius: 1rem;">
+                <i class="bi bi-folder2-open me-2"></i>Toplam: <?php echo count($jobs); ?> İş
+            </span>
+        </div>
     </div>
     <table class="table table-hover align-middle">
         <thead class="table-light">
@@ -413,13 +436,42 @@ document.querySelectorAll('.job-checkbox').forEach(checkbox => {
 function updateSelectedCount() {
     const count = document.querySelectorAll('.job-checkbox:checked').length;
     document.getElementById('selectedCount').textContent = count;
+    document.getElementById('exportCount').textContent = count;
 }
 
 // Toplu işlem panelini göster/gizle
 function toggleBulkPanel() {
     const count = document.querySelectorAll('.job-checkbox:checked').length;
     const panel = document.getElementById('bulkActionsPanel');
+    const exportBtn = document.getElementById('exportSelectedBtn');
+    
     panel.style.display = count > 0 ? 'block' : 'none';
+    exportBtn.style.display = count > 0 ? 'inline-block' : 'none';
+}
+
+// Seçili kayıtları export et
+function exportSelected() {
+    const checkedBoxes = document.querySelectorAll('.job-checkbox:checked');
+    if (checkedBoxes.length === 0) {
+        alert('Lütfen en az bir iş seçin!');
+        return;
+    }
+    
+    // Form oluştur ve gönder
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = 'export-isler.php<?php echo !empty($_GET) ? '?' . http_build_query($_GET) : ''; ?>';
+    
+    checkedBoxes.forEach(cb => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'selected_jobs[]';
+        input.value = cb.value;
+        form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
 }
 
 // İşlem tipine göre ek alanları göster

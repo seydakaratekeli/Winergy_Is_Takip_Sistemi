@@ -76,13 +76,20 @@ $stats = [
 
 <!-- Header -->
 <div class="row mb-4">
-    <div class="col-md-8">
+    <div class="col-md-6">
         <h3 class="fw-bold" style="color: var(--dt-sec-color);">
             <i class="bi bi-people-fill"></i> Kullanıcı Yönetimi
         </h3>
         <p class="text-muted">Sistem kullanıcılarını yönetin, yeni kullanıcı ekleyin veya mevcut kullanıcıları düzenleyin.</p>
     </div>
-    <div class="col-md-4 text-end">
+    <div class="col-md-6 text-end">
+        <!-- Export Butonları -->
+        <button type="button" class="btn btn-success btn-sm me-2" id="exportSelectedUsersBtn" style="display: none;" onclick="exportSelectedUsers()">
+            <i class="bi bi-file-earmark-excel me-1"></i>Seçilenleri Aktar (<span id="exportUserCount">0</span>)
+        </button>
+        <a href="export-kullanicilar.php" class="btn btn-outline-success btn-sm me-2">
+            <i class="bi bi-file-earmark-excel me-1"></i>Excel'e Aktar
+        </a>
         <a href="kullanici-ekle.php" class="btn btn-winergy">
             <i class="bi bi-person-plus"></i> Yeni Kullanıcı Ekle
         </a>
@@ -132,6 +139,9 @@ $stats = [
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
+                        <th style="width: 40px;">
+                            <input type="checkbox" class="form-check-input" id="selectAllUsers">
+                        </th>
                         <th class="ps-4">Kullanıcı Adı</th>
                         <th>E-Posta</th>
                         <th>Rol</th>
@@ -143,6 +153,9 @@ $stats = [
                 <tbody>
                     <?php foreach($users as $user): ?>
                     <tr>
+                        <td>
+                            <input type="checkbox" class="form-check-input user-checkbox" value="<?php echo $user['id']; ?>">
+                        </td>
                         <td class="ps-4">
                             <div class="d-flex align-items-center">
                                 <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-2" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
@@ -210,5 +223,59 @@ $stats = [
         </div>
     </div>
 </div>
+
+<script>
+// Tüm kullanıcıları seç/bırak
+document.getElementById('selectAllUsers')?.addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.user-checkbox');
+    checkboxes.forEach(cb => cb.checked = this.checked);
+    updateUserExportBtn();
+});
+
+// Tek checkbox değişimi
+document.querySelectorAll('.user-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        updateUserExportBtn();
+        
+        const allChecked = document.querySelectorAll('.user-checkbox:checked').length === document.querySelectorAll('.user-checkbox').length;
+        const selectAll = document.getElementById('selectAllUsers');
+        if (selectAll) selectAll.checked = allChecked;
+    });
+});
+
+// Export butonu görünürlüğünü güncelle
+function updateUserExportBtn() {
+    const count = document.querySelectorAll('.user-checkbox:checked').length;
+    const btn = document.getElementById('exportSelectedUsersBtn');
+    const countSpan = document.getElementById('exportUserCount');
+    
+    if (btn) btn.style.display = count > 0 ? 'inline-block' : 'none';
+    if (countSpan) countSpan.textContent = count;
+}
+
+// Seçili kullanıcıları export et
+function exportSelectedUsers() {
+    const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+    if (checkedBoxes.length === 0) {
+        alert('Lütfen en az bir kullanıcı seçin!');
+        return;
+    }
+    
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = 'export-kullanicilar.php';
+    
+    checkedBoxes.forEach(cb => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'selected_users[]';
+        input.value = cb.value;
+        form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+</script>
 
 <?php include 'includes/footer.php'; ?>

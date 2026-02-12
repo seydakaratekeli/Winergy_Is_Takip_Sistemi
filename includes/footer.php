@@ -33,6 +33,9 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+<!-- Telefon Numarası Otomatik Formatlama -->
+<script src="assets/phone-formatter.js"></script>
+
 <script>
 // Smooth animations
 document.addEventListener('DOMContentLoaded', function() {

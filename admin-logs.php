@@ -111,12 +111,15 @@ if (isset($_POST['cleanup_logs'])) {
 <div class="card border-0 shadow-sm">
     <div class="card-header bg-white border-0 py-3">
         <div class="row align-items-center">
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <h5 class="mb-0 fw-bold">
                     <i class="bi bi-filter"></i> Log Kayıtları
                 </h5>
             </div>
-            <div class="col-md-6 text-end">
+            <div class="col-md-8 text-end">
+                <a href="export-admin-logs.php?<?php echo http_build_query($_GET); ?>" class="btn btn-outline-success btn-sm me-2">
+                    <i class="bi bi-file-earmark-excel me-1"></i>Excel'e Aktar
+                </a>
                 <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#cleanupModal">
                     <i class="bi bi-trash"></i> Eski Logları Temizle
                 </button>

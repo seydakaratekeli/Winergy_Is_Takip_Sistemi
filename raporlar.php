@@ -67,11 +67,28 @@ for ($i = 5; $i >= 0; $i--) {
 ?>
 
 <div class="row mb-4">
-    <div class="col-md-8">
+    <div class="col-md-6">
         <h2 class="fw-bold" style="color: var(--dt-sec-color);">Yönetici Raporları</h2>
         <p class="text-muted">Winergy Technologies Genel Performans Analizi</p>
     </div>
-    <div class="col-md-4 text-end">
+    <div class="col-md-6 text-end">
+        <!-- Export Butonları -->
+        <div class="btn-group me-2" role="group">
+            <button type="button" class="btn btn-outline-success btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="bi bi-file-earmark-excel me-1"></i>Excel'e Aktar
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="export-raporlar.php?type=overview">
+                    <i class="bi bi-graph-up me-2"></i>Genel Durum Özeti
+                </a></li>
+                <li><a class="dropdown-item" href="export-raporlar.php?type=staff">
+                    <i class="bi bi-people me-2"></i>Personel İş Yükü
+                </a></li>
+                <li><a class="dropdown-item" href="export-raporlar.php?type=service">
+                    <i class="bi bi-gear me-2"></i>Hizmet Türü Dağılımı
+                </a></li>
+            </ul>
+        </div>
         <button onclick="location.reload();" class="btn btn-winergy">
             <i class="bi bi-arrow-clockwise"></i> Yenile
         </button>
