@@ -1,7 +1,7 @@
 <?php
 
 $host = "localhost";
-$dbname = "winergy_is_takip";
+$dbname = "winergy_is_takip_db";
 $username = "root";
 $password = ""; 
 

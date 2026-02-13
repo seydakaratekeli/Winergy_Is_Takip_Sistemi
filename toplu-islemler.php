@@ -68,16 +68,17 @@ try {
             header("Location: index.php?success=assigned&count=" . $stmt->rowCount());
             break;
             
-        case 'delete':
-            // Soft delete - İşleri "İptal" durumuna al (Veri kaybı önlenir)
-            $sql = "UPDATE jobs SET status = 'İptal', updated_by = ?, updated_at = NOW() WHERE id IN ($placeholders)";
-            $params = array_merge([$_SESSION['user_id']], $job_ids);
-            $stmt = $db->prepare($sql);
-            $stmt->execute($params);
-            
-            log_activity('İşler İptal Edildi', "Seçili işler iptal edildi (soft delete): " . implode(', ', $job_ids), 'INFO');
-            header("Location: index.php?success=cancelled&count=" . $stmt->rowCount());
-            break;
+       
+    case 'delete':
+    // Hard delete - İşleri veritabanından tamamen siler
+    $sql = "DELETE FROM jobs WHERE id IN ($placeholders)";
+    $params = $job_ids; // updated_by parametresine ihtiyaç kalmadığı için direkt listeyi gönder
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
+    
+    log_activity('İşler Silindi', "Seçili işler kalıcı olarak silindi: " . implode(', ', $job_ids), 'WARNING');
+    header("Location: index.php?success=deleted&count=" . $stmt->rowCount());
+    break;
             
         default:
             log_activity('Toplu İşlem Hatası', "Geçersiz işlem türü: $action", 'ERROR');
