@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Anamakine: 127.0.0.1
--- Üretim Zamanı: 17 Şub 2026, 09:28:56
+-- Üretim Zamanı: 18 Şub 2026, 09:22:20
 -- Sunucu sürümü: 10.4.32-MariaDB
 -- PHP Sürümü: 8.2.12
 
@@ -45,7 +45,7 @@ CREATE TABLE `customers` (
 --
 
 INSERT INTO `customers` (`id`, `name`, `contact_name`, `phone`, `email`, `address`, `created_by`, `updated_by`, `created_at`, `updated_at`) VALUES
-(1, 'win tech', 'seyda kara', '0551 199 55 37', 'seyda@winergy.com', 'Malazgirt mahallesi Buhara Caddesi Tutkun Sokak No:1/1 Sincan Ankara', NULL, NULL, '2026-02-13 09:07:02', NULL);
+(2, 'BAŞKENT ÜNİVERSİTESİ', '', '', '', '', 8, NULL, '2026-02-18 08:19:45', NULL);
 
 -- --------------------------------------------------------
 
@@ -71,12 +71,17 @@ CREATE TABLE `customer_notes` (
 CREATE TABLE `jobs` (
   `id` int(11) NOT NULL,
   `customer_id` int(11) NOT NULL,
-  `service_type` enum('Enerji Etüdü','ISO 50001','EKB','Enerji Yöneticisi') NOT NULL,
+  `service_type` text DEFAULT NULL COMMENT 'JSON array formatında hizmet türleri',
   `title` varchar(255) NOT NULL,
   `description` text DEFAULT NULL,
   `assigned_user_id` int(11) DEFAULT NULL,
   `start_date` date DEFAULT NULL,
   `due_date` date DEFAULT NULL,
+  `invoice_amount` decimal(10,2) DEFAULT NULL COMMENT 'Kesilecek Fatura Tutarı',
+  `invoice_vat_included` tinyint(1) DEFAULT NULL COMMENT 'KDV Dahil mi? (1: Evet, 0: Hayır)',
+  `invoice_date` date DEFAULT NULL COMMENT 'Fatura Tarihi',
+  `invoice_total_amount` decimal(10,2) DEFAULT NULL COMMENT 'Toplam Tutar',
+  `invoice_withholding` enum('var','yok','belirtilmedi') DEFAULT 'belirtilmedi' COMMENT 'Tevkifat Durumu',
   `status` enum('Açıldı','Çalışılıyor','Beklemede','Tamamlandı','İptal') DEFAULT 'Açıldı',
   `created_by` int(11) DEFAULT NULL,
   `updated_by` int(11) DEFAULT NULL,
@@ -88,12 +93,8 @@ CREATE TABLE `jobs` (
 -- Tablo döküm verisi `jobs`
 --
 
-INSERT INTO `jobs` (`id`, `customer_id`, `service_type`, `title`, `description`, `assigned_user_id`, `start_date`, `due_date`, `status`, `created_by`, `updated_by`, `created_at`, `updated_at`) VALUES
-(2, 1, 'Enerji Etüdü', 'vap', '', 8, '2026-02-17', '0000-00-00', 'Açıldı', 8, NULL, '2026-02-17 08:11:28', NULL),
-(3, 1, 'Enerji Etüdü', 'vap', '', NULL, '2026-02-17', '0000-00-00', 'Açıldı', 8, NULL, '2026-02-17 08:12:04', NULL),
-(4, 1, 'Enerji Etüdü', '', '', NULL, '2026-02-02', '2026-02-19', 'Açıldı', 8, 8, '2026-02-17 08:19:21', '2026-02-17 08:25:47'),
-(5, 1, 'ISO 50001', '', '', NULL, '2026-02-17', '2026-02-19', 'Açıldı', 8, 8, '2026-02-17 08:20:09', '2026-02-17 08:26:13'),
-(6, 1, 'ISO 50001', '', '', NULL, NULL, NULL, 'Açıldı', 8, NULL, '2026-02-17 08:25:27', NULL);
+INSERT INTO `jobs` (`id`, `customer_id`, `service_type`, `title`, `description`, `assigned_user_id`, `start_date`, `due_date`, `invoice_amount`, `invoice_vat_included`, `invoice_date`, `invoice_total_amount`, `invoice_withholding`, `status`, `created_by`, `updated_by`, `created_at`, `updated_at`) VALUES
+(11, 2, '[\"ISO 50001\",\"EKB\",\"Enerji Yöneticisi\"]', '', '', NULL, NULL, NULL, NULL, 0, NULL, NULL, 'belirtilmedi', 'Açıldı', 8, NULL, '2026-02-18 08:20:32', NULL);
 
 -- --------------------------------------------------------
 
@@ -121,6 +122,7 @@ CREATE TABLE `job_notes` (
   `job_id` int(11) NOT NULL,
   `user_id` int(11) DEFAULT NULL,
   `note` text NOT NULL,
+  `note_type` enum('genel','sözleşme','fatura') NOT NULL DEFAULT 'genel' COMMENT 'Not Kategorisi',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -135,7 +137,7 @@ CREATE TABLE `users` (
   `name` varchar(100) NOT NULL,
   `email` varchar(100) NOT NULL,
   `password` varchar(255) NOT NULL,
-  `role` enum('admin','operasyon','danisman') NOT NULL,
+  `role` enum('admin','personel','danisman') NOT NULL,
   `is_active` tinyint(1) DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -208,7 +210,7 @@ ALTER TABLE `users`
 -- Tablo için AUTO_INCREMENT değeri `customers`
 --
 ALTER TABLE `customers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- Tablo için AUTO_INCREMENT değeri `customer_notes`
@@ -220,7 +222,7 @@ ALTER TABLE `customer_notes`
 -- Tablo için AUTO_INCREMENT değeri `jobs`
 --
 ALTER TABLE `jobs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- Tablo için AUTO_INCREMENT değeri `job_files`
