@@ -46,6 +46,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $assigned_user_id = !empty($_POST['assigned_user_id']) ? $_POST['assigned_user_id'] : null;
         $start_date = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
         $due_date = !empty($_POST['due_date']) ? $_POST['due_date'] : null;
+        $invoice_amount = !empty($_POST['invoice_amount']) ? $_POST['invoice_amount'] : null;
+        $invoice_vat_included = isset($_POST['invoice_vat_included']) ? (int)$_POST['invoice_vat_included'] : null;
+        $invoice_date = !empty($_POST['invoice_date']) ? $_POST['invoice_date'] : null;
+        $invoice_total_amount = !empty($_POST['invoice_total_amount']) ? $_POST['invoice_total_amount'] : null;
+        $invoice_withholding = !empty($_POST['invoice_withholding']) ? $_POST['invoice_withholding'] : 'belirtilmedi';
         $status = $_POST['status'];
 
         
@@ -67,13 +72,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     assigned_user_id = ?, 
                     start_date = ?, 
                     due_date = ?,
+                    invoice_amount = ?,
+                    invoice_vat_included = ?,
+                    invoice_date = ?,
+                    invoice_total_amount = ?,
+                    invoice_withholding = ?,
                     status = ?,
                     updated_by = ?,
                     updated_at = NOW()
                     WHERE id = ?";
             
             $stmt = $db->prepare($sql);
-            if ($stmt->execute([$customer_id, $service_type, $title, $description, $assigned_user_id, $start_date, $due_date, $status, $_SESSION['user_id'], $id])) {
+            if ($stmt->execute([$customer_id, $service_type, $title, $description, $assigned_user_id, $start_date, $due_date, $invoice_amount, $invoice_vat_included, $invoice_date, $invoice_total_amount, $invoice_withholding, $status, $_SESSION['user_id'], $id])) {
             log_activity('İş Güncellendi', "İş Başlığı: $title (ID: $id)", 'INFO');    
             header("Location: is-detay.php?id=$id&updated=1");
                 exit;
@@ -221,6 +231,41 @@ include 'includes/header.php';
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">Söz. Bitiş Tarihi</label>
                             <input type="date" name="due_date" class="form-control" value="<?php echo $job['due_date']; ?>">
+                        </div>
+                    </div>
+
+                    <hr>
+                    <h6 class="fw-bold text-primary mb-3"><i class="bi bi-receipt me-2"></i>Fatura Bilgileri</h6>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label fw-bold">Kesilecek Fatura Tutarı (₺)</label>
+                            <input type="number" name="invoice_amount" class="form-control" step="0.01" min="0" placeholder="0" value="<?php echo $job['invoice_amount'] ?? ''; ?>">
+                            <small class="text-muted">KDV hariç/dahil tutar</small>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label fw-bold">Toplam Tutar (₺)</label>
+                            <input type="number" name="invoice_total_amount" class="form-control" step="0.01" min="0" placeholder="0" value="<?php echo $job['invoice_total_amount'] ?? ''; ?>">
+                            <small class="text-muted">Nihai ödenecek tutar</small>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label fw-bold">KDV Durumu</label>
+                            <select name="invoice_vat_included" class="form-select">
+                                <option value="">Belirtilmedi</option>
+                                <option value="1" <?php echo (isset($job['invoice_vat_included']) && $job['invoice_vat_included'] == 1) ? 'selected' : ''; ?>>KDV Dahil</option>
+                                <option value="0" <?php echo (isset($job['invoice_vat_included']) && $job['invoice_vat_included'] == 0) ? 'selected' : ''; ?>>KDV Hariç</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label fw-bold">Tevkifat</label>
+                            <select name="invoice_withholding" class="form-select">
+                                <option value="belirtilmedi" <?php echo (($job['invoice_withholding'] ?? 'belirtilmedi') == 'belirtilmedi') ? 'selected' : ''; ?>>Belirtilmedi</option>
+                                <option value="var" <?php echo (($job['invoice_withholding'] ?? '') == 'var') ? 'selected' : ''; ?>>Var</option>
+                                <option value="yok" <?php echo (($job['invoice_withholding'] ?? '') == 'yok') ? 'selected' : ''; ?>>Yok</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label fw-bold">Fatura Tarihi</label>
+                            <input type="date" name="invoice_date" class="form-control" value="<?php echo $job['invoice_date'] ?? ''; ?>">
                         </div>
                     </div>
 

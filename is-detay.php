@@ -84,10 +84,11 @@ if (isset($_POST['add_note'])) {
         csrf_error();
     }
     
-    $note = $_POST['note'];
+    $note = trim($_POST['note']);
+    $note_type = $_POST['note_type'] ?? 'genel';
     $user_id = $_SESSION['user_id']; // Artık session'dan alabiliriz
-    $stmt = $db->prepare("INSERT INTO job_notes (job_id, user_id, note) VALUES (?, ?, ?)");
-    if ($stmt->execute([$id, $user_id, $note])) {
+    $stmt = $db->prepare("INSERT INTO job_notes (job_id, user_id, note, note_type) VALUES (?, ?, ?, ?)");
+    if ($stmt->execute([$id, $user_id, $note, $note_type])) {
         log_activity('İş Notu Eklendi', "İş ID: $id için yeni not eklendi.", 'INFO');
         header("Location: is-detay.php?id=$id&note_success=1");
         exit;
@@ -332,6 +333,61 @@ include 'includes/header.php';
                         <?php endif; ?>
                     </div>
                 </div>
+                
+                <hr>
+                <h6 class="fw-bold text-primary mb-3"><i class="bi bi-receipt me-2"></i>Fatura Bilgileri</h6>
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <strong>Fatura Tutarı:</strong> <br>
+                        <?php if(!empty($jobDetail['invoice_amount'])): ?>
+                            <span class="text-info fw-bold"><?php echo rtrim(rtrim(number_format($jobDetail['invoice_amount'], 2, ',', '.'), '0'), ','); ?> ₺</span>
+                            <br><small class="text-muted">Ana tutar</small>
+                        <?php else: ?>
+                            <span class="text-muted">-</span>
+                        <?php endif; ?>
+                    </div>
+                    <div class="col-md-2">
+                        <strong>Toplam Tutar:</strong> <br>
+                        <?php if(!empty($jobDetail['invoice_total_amount'])): ?>
+                            <span class="text-success fw-bold"><?php echo rtrim(rtrim(number_format($jobDetail['invoice_total_amount'], 2, ',', '.'), '0'), ','); ?> ₺</span>
+                            <br><small class="text-muted">Nihai tutar</small>
+                        <?php else: ?>
+                            <span class="text-muted">-</span>
+                        <?php endif; ?>
+                    </div>
+                    <div class="col-md-2">
+                        <strong>KDV:</strong> <br>
+                        <?php if(isset($jobDetail['invoice_vat_included'])): ?>
+                            <?php if($jobDetail['invoice_vat_included'] == 1): ?>
+                                <span class="badge bg-success">Dahil</span>
+                            <?php else: ?>
+                                <span class="badge bg-warning text-dark">Hariç</span>
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <span class="text-muted">-</span>
+                        <?php endif; ?>
+                    </div>
+                    <div class="col-md-2">
+                        <strong>Tevkifat:</strong> <br>
+                        <?php 
+                        $withholding = $jobDetail['invoice_withholding'] ?? 'belirtilmedi';
+                        if($withholding == 'var'): ?>
+                            <span class="badge bg-danger">Var</span>
+                        <?php elseif($withholding == 'yok'): ?>
+                            <span class="badge bg-success">Yok</span>
+                        <?php else: ?>
+                            <span class="text-muted">-</span>
+                        <?php endif; ?>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Fatura Tarihi:</strong> <br>
+                        <?php if(!empty($jobDetail['invoice_date'])): ?>
+                            <?php echo date('d.m.Y', strtotime($jobDetail['invoice_date'])); ?>
+                        <?php else: ?>
+                            <span class="text-muted">-</span>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -340,6 +396,14 @@ include 'includes/header.php';
             <div class="card-body">
                 <form method="POST" class="mb-4">
                     <?php echo csrf_input(); ?>
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold">Not Kategorisi</label>
+                        <select name="note_type" class="form-select form-select-sm mb-2">
+                            <option value="genel">📝 Genel Not</option>
+                            <option value="sözleşme">📋 Sözleşme Notu</option>
+                            <option value="fatura">💰 Fatura Notu</option>
+                        </select>
+                    </div>
                     <textarea name="note" class="form-control mb-2" rows="3" placeholder="Notunuzu buraya yazın..." required></textarea>
                     <button type="submit" name="add_note" class="btn btn-winergy btn-sm">
                         <i class="bi bi-plus-circle"></i> Not Ekle
@@ -350,18 +414,30 @@ include 'includes/header.php';
                 $all_notes = $notes->fetchAll();
                 if(!empty($all_notes)): 
                     foreach($all_notes as $n): 
+                        $type_icons = [
+                            'genel' => ['icon' => '📝', 'class' => 'info', 'label' => 'Genel'],
+                            'sözleşme' => ['icon' => '📋', 'class' => 'primary', 'label' => 'Sözleşme'],
+                            'fatura' => ['icon' => '💰', 'class' => 'success', 'label' => 'Fatura']
+                        ];
+                        $note_type = $n['note_type'] ?? 'genel';
+                        $type_info = $type_icons[$note_type] ?? $type_icons['genel'];
                 ?>
-                    <div class="border-bottom pb-2 mb-3">
-                        <div class="d-flex justify-content-between align-items-start mb-1">
-                            <div>
-                                <i class="bi bi-person-circle me-1 text-primary"></i>
-                                <strong class="text-primary"><?php echo htmlspecialchars($n['user_name']); ?></strong>
+                    <div class="card mb-2 border-start border-<?php echo $type_info['class']; ?> border-3">
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-person-circle text-primary"></i>
+                                    <strong class="text-primary"><?php echo htmlspecialchars($n['user_name']); ?></strong>
+                                    <span class="badge bg-<?php echo $type_info['class']; ?> bg-opacity-10 text-<?php echo $type_info['class']; ?> small">
+                                        <?php echo $type_info['icon']; ?> <?php echo $type_info['label']; ?>
+                                    </span>
+                                </div>
+                                <small class="text-muted">
+                                    <i class="bi bi-clock me-1"></i><?php echo date('d.m.Y H:i', strtotime($n['created_at'])); ?>
+                                </small>
                             </div>
-                            <small class="text-muted">
-                                <i class="bi bi-clock me-1"></i><?php echo date('d.m.Y H:i', strtotime($n['created_at'])); ?>
-                            </small>
+                            <p class="mb-0"><?php echo nl2br(htmlspecialchars($n['note'])); ?></p>
                         </div>
-                        <p class="mb-0 ms-4"><?php echo nl2br(htmlspecialchars($n['note'])); ?></p>
                     </div>
                 <?php 
                     endforeach;

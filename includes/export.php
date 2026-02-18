@@ -106,6 +106,11 @@ function export_jobs($db, $filters = [], $selected_ids = null) {
             u.role as staff_role,
             u.email as staff_email,
             j.due_date,
+            j.invoice_amount,
+            j.invoice_vat_included,
+            j.invoice_date,
+            j.invoice_total_amount,
+            j.invoice_withholding,
             j.created_at,
             j.updated_at,
             creator.name as created_by_name,
@@ -143,6 +148,11 @@ function export_jobs($db, $filters = [], $selected_ids = null) {
         'Teslim Tarihi',
         'Kalan Gün',
         'Gecikme Durumu',
+        'Fatura Tutarı',
+        'Toplam Tutar',
+        'KDV Durumu',
+        'Tevkifat',
+        'Fatura Tarihi',
         'Not Sayısı',
         'Dosya Sayısı',
         'Oluşturan',
@@ -193,6 +203,23 @@ function export_jobs($db, $filters = [], $selected_ids = null) {
             }
         }
         
+        // Tevkifat etiketi
+        $withholding_label = '-';
+        if (!empty($job['invoice_withholding'])) {
+            $withholding_labels = [
+                'var' => 'Var',
+                'yok' => 'Yok',
+                'belirtilmedi' => 'Belirtilmedi'
+            ];
+            $withholding_label = $withholding_labels[$job['invoice_withholding']] ?? '-';
+        }
+        
+        // Tutar formatlama - gereksiz sıfırları kaldır
+        $format_amount = function($amount) {
+            if (empty($amount)) return '-';
+            return rtrim(rtrim(number_format($amount, 2, ',', '.'), '0'), ',') . ' TL';
+        };
+        
         export_csv_row([
             $job['id'],
             $service_types_str,
@@ -208,6 +235,11 @@ function export_jobs($db, $filters = [], $selected_ids = null) {
             $job['due_date'] ?? '',
             $days_remaining >= 0 ? '+' . $days_remaining : $days_remaining,
             $delay_status,
+            $format_amount($job['invoice_amount']),
+            $format_amount($job['invoice_total_amount']),
+            isset($job['invoice_vat_included']) ? ($job['invoice_vat_included'] == 1 ? 'KDV Dahil' : 'KDV Hariç') : '-',
+            $withholding_label,
+            !empty($job['invoice_date']) ? date('d.m.Y', strtotime($job['invoice_date'])) : '-',
             $job['note_count'] ?? 0,
             $job['file_count'] ?? 0,
             $job['created_by_name'] ?? '-',

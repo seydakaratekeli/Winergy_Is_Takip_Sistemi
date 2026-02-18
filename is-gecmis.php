@@ -86,12 +86,20 @@ $notes_stmt->execute([$id]);
 $notes = $notes_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 foreach ($notes as $note) {
+    // Not kategorisi etiketleri
+    $note_type_labels = [
+        'genel' => '📝 Genel',
+        'sözleşme' => '📋 Sözleşme',
+        'fatura' => '💰 Fatura'
+    ];
+    
     $activities[] = [
         'type' => 'note',
         'user' => $note['user_name'] ?? 'Bilinmeyen',
         'action' => 'Not ekledi',
         'details' => substr($note['note'], 0, 100) . (strlen($note['note']) > 100 ? '...' : ''),
         'full_content' => $note['note'],
+        'note_type' => $note_type_labels[$note['note_type'] ?? 'genel'] ?? 'Genel',
         'timestamp' => $note['created_at'],
         'icon' => 'bi-chat-left-text-fill',
         'color' => 'info'
@@ -258,8 +266,13 @@ include 'includes/header.php';
                                         <?php if (!empty($activity['details'])): ?>
                                             <div class="mt-2 p-3 rounded" style="background-color: var(--dt-gray2-color);">
                                                 <?php if ($activity['type'] == 'note' && !empty($activity['full_content'])): ?>
-                                                    <div class="small text-muted mb-1">
-                                                        <i class="bi bi-chat-quote me-1"></i>Not İçeriği:
+                                                    <div class="small text-muted mb-1 d-flex justify-content-between align-items-center">
+                                                        <span>
+                                                            <i class="bi bi-chat-quote me-1"></i>Not İçeriği:
+                                                        </span>
+                                                        <?php if (!empty($activity['note_type'])): ?>
+                                                            <span class="badge bg-secondary"><?php echo $activity['note_type']; ?></span>
+                                                        <?php endif; ?>
                                                     </div>
                                                     <div><?php echo nl2br(htmlspecialchars($activity['full_content'])); ?></div>
                                                 <?php elseif ($activity['type'] == 'file'): ?>

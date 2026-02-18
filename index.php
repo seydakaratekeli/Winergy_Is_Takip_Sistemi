@@ -303,6 +303,7 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
                 <th><i class="bi bi-gear"></i> Hizmet</th>
                 <th><i class="bi bi-person"></i> Sorumlu</th>
                 <th><i class="bi bi-calendar"></i> Teslim Tarihi</th>
+                <th><i class="bi bi-receipt"></i> Fatura</th>
                 <th><i class="bi bi-flag"></i> Durum</th>
                 <th class="text-center"><i class="bi bi-tools"></i> İşlem</th>
             </tr>
@@ -386,6 +387,24 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
                     <?php endif; ?>
                 </td>
                 <td>
+                    <?php if(!empty($job['invoice_amount']) || !empty($job['invoice_total_amount'])): ?>
+                        <?php if(!empty($job['invoice_total_amount'])): ?>
+                            <span class="text-success fw-bold" data-bs-toggle="tooltip" title="Toplam Tutar">
+                                <?php echo rtrim(rtrim(number_format($job['invoice_total_amount'], 2, ',', '.'), '0'), ','); ?> ₺
+                            </span>
+                        <?php elseif(!empty($job['invoice_amount'])): ?>
+                            <span class="text-info fw-bold" data-bs-toggle="tooltip" title="<?php echo isset($job['invoice_vat_included']) && $job['invoice_vat_included'] == 1 ? 'KDV Dahil' : 'KDV Hariç'; ?>">
+                                <?php echo rtrim(rtrim(number_format($job['invoice_amount'], 2, ',', '.'), '0'), ','); ?> ₺
+                            </span>
+                        <?php endif; ?>
+                        <?php if(!empty($job['invoice_date'])): ?>
+                            <br><small class="text-muted"><i class="bi bi-calendar-event"></i> <?php echo date('d.m.Y', strtotime($job['invoice_date'])); ?></small>
+                        <?php endif; ?>
+                    <?php else: ?>
+                        <span class="text-muted">-</span>
+                    <?php endif; ?>
+                </td>
+                <td>
                     <span class="badge <?php 
                         $current_status = trim($job['status']);
                         $badge_class = 'bg-secondary'; // Default
@@ -423,7 +442,7 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
             </tr>
             <?php endforeach; ?>
             <?php if(empty($jobs)): ?>
-                <tr><td colspan="7" class="text-center py-4">Filtreye uygun iş bulunamadı.</td></tr>
+                <tr><td colspan="8" class="text-center py-4">Filtreye uygun iş bulunamadı.</td></tr>
             <?php endif; ?>
         </tbody>
     </table>

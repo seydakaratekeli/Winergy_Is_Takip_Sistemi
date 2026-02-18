@@ -31,6 +31,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $assigned_user_id = !empty($_POST['assigned_user_id']) ? $_POST['assigned_user_id'] : null;
         $start_date = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
         $due_date = !empty($_POST['due_date']) ? $_POST['due_date'] : null;
+        $invoice_amount = !empty($_POST['invoice_amount']) ? $_POST['invoice_amount'] : null;
+        $invoice_vat_included = isset($_POST['invoice_vat_included']) ? (int)$_POST['invoice_vat_included'] : null;
+        $invoice_date = !empty($_POST['invoice_date']) ? $_POST['invoice_date'] : null;
+        $invoice_total_amount = !empty($_POST['invoice_total_amount']) ? $_POST['invoice_total_amount'] : null;
+        $invoice_withholding = !empty($_POST['invoice_withholding']) ? $_POST['invoice_withholding'] : 'belirtilmedi';
 
         // TARİH VALİDASYONU: Başlangıç tarihi bitiş tarihinden önce olmalı
         $error = "";
@@ -42,11 +47,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             echo "<div class='alert alert-danger'><i class='bi bi-exclamation-triangle-fill'></i> $error</div>";
         } else {
             try {
-                $sql = "INSERT INTO jobs (customer_id, service_type, title, description, assigned_user_id, start_date, due_date, status, created_by) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, 'Açıldı', ?)";
+                $sql = "INSERT INTO jobs (customer_id, service_type, title, description, assigned_user_id, start_date, due_date, invoice_amount, invoice_vat_included, invoice_date, invoice_total_amount, invoice_withholding, status, created_by) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Açıldı', ?)";
                 
                 $stmt = $db->prepare($sql);
-                if ($stmt->execute([$customer_id, $service_type, $title, $description, $assigned_user_id, $start_date, $due_date, $_SESSION['user_id']])) {
+                if ($stmt->execute([$customer_id, $service_type, $title, $description, $assigned_user_id, $start_date, $due_date, $invoice_amount, $invoice_vat_included, $invoice_date, $invoice_total_amount, $invoice_withholding, $_SESSION['user_id']])) {
                     log_activity('İş Açıldı', "Yeni İş: $title", 'SUCCESS');    
                     echo "<div class='alert alert-success'>İş kaydı başarıyla açıldı! <a href='index.php'>Listeye dön</a></div>";
                 }
@@ -154,12 +159,47 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
                         </div>
 
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">Başlangıç Tarihi</label>
+                            <label class="form-label">Söz. Başlangıç Tarihi</label>
                             <input type="date" name="start_date" class="form-control">
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">Teslim Tarihi</label>
+                            <label class="form-label">Söz. Bitiş Tarihi</label>
                             <input type="date" name="due_date" class="form-control">
+                        </div>
+                    </div>
+
+                    <hr>
+                    <h6 class="fw-bold text-primary mb-3"><i class="bi bi-receipt me-2"></i>Fatura Bilgileri</h6>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Kesilecek Fatura Tutarı (₺)</label>
+                            <input type="number" name="invoice_amount" class="form-control" step="0.01" min="0" placeholder="0">
+                            <small class="text-muted">KDV hariç/dahil tutar</small>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Toplam Tutar (₺)</label>
+                            <input type="number" name="invoice_total_amount" class="form-control" step="0.01" min="0" placeholder="0">
+                            <small class="text-muted">Nihai ödenecek tutar</small>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">KDV Durumu</label>
+                            <select name="invoice_vat_included" class="form-select">
+                                <option value="">Belirtilmedi</option>
+                                <option value="1">KDV Dahil</option>
+                                <option value="0">KDV Hariç</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Tevkifat</label>
+                            <select name="invoice_withholding" class="form-select">
+                                <option value="belirtilmedi">Belirtilmedi</option>
+                                <option value="var">Var</option>
+                                <option value="yok">Yok</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Fatura Tarihi</label>
+                            <input type="date" name="invoice_date" class="form-control">
                         </div>
                     </div>
 
