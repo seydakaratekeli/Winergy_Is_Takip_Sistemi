@@ -297,7 +297,24 @@ include 'includes/header.php';
                 <hr>
                 <div class="row text-center">
                     <div class="col-md-4"><strong>Müşteri:</strong> <br> <?php echo htmlspecialchars($jobDetail['customer_name']); ?></div>
-                    <div class="col-md-4"><strong>Hizmet:</strong> <br> <?php echo htmlspecialchars($jobDetail['service_type']); ?></div>
+                    <div class="col-md-4">
+                        <strong>Hizmet Türleri:</strong> <br> 
+                        <?php 
+                        $service_types = [];
+                        if (!empty($jobDetail['service_type'])) {
+                            $service_types = json_decode($jobDetail['service_type'], true);
+                            if (!is_array($service_types)) {
+                                $service_types = [$jobDetail['service_type']];
+                            }
+                        }
+                        if (!empty($service_types)) {
+                            foreach($service_types as $idx => $service) {
+                                echo '<span class="badge bg-info">' . htmlspecialchars($service) . '</span>';
+                                if ($idx < count($service_types) - 1) echo ' ';
+                            }
+                        }
+                        ?>
+                    </div>
                     <div class="col-md-4">
                         <strong>Sorumlu:</strong> <br> 
                         <?php if($jobDetail['staff_name']): ?>
@@ -445,21 +462,24 @@ include 'includes/header.php';
                 $today_date = date('Y-m-d');
                 
                 // Gün farkını hesapla
-                $due_date_obj = new DateTime($jobDetail['due_date']);
-                $today_obj = new DateTime($today_date);
-                $diff = $today_obj->diff($due_date_obj);
-                $days_diff = (int)$diff->format('%r%a'); // + gelecek, - geçmiş
+                $days_diff = null;
+                if (!empty($jobDetail['due_date'])) {
+                    $due_date_obj = new DateTime($jobDetail['due_date']);
+                    $today_obj = new DateTime($today_date);
+                    $diff = $today_obj->diff($due_date_obj);
+                    $days_diff = (int)$diff->format('%r%a'); // + gelecek, - geçmiş
+                }
                 
                 // Durum belirle
-                $is_delayed = ($days_diff < 0 && !$is_completed);
-                $is_today = ($days_diff == 0 && !$is_completed);
-                $is_urgent = ($days_diff > 0 && $days_diff <= 3 && !$is_completed);
-                $is_soon = ($days_diff > 3 && $days_diff <= 7 && !$is_completed);
+                $is_delayed = ($days_diff !== null && $days_diff < 0 && !$is_completed);
+                $is_today = ($days_diff !== null && $days_diff == 0 && !$is_completed);
+                $is_urgent = ($days_diff !== null && $days_diff > 0 && $days_diff <= 3 && !$is_completed);
+                $is_soon = ($days_diff !== null && $days_diff > 3 && $days_diff <= 7 && !$is_completed);
                 ?>
                 
                 <small class="text-muted d-block mb-2">
                     <i class="bi bi-calendar-event"></i> Teslim Tarihi: 
-                    <strong><?php echo date('d.m.Y', strtotime($jobDetail['due_date'])); ?></strong>
+                    <strong><?php echo !empty($jobDetail['due_date']) ? date('d.m.Y', strtotime($jobDetail['due_date'])) : '-'; ?></strong>
                 </small>
                 
                 <?php if($is_delayed): ?>

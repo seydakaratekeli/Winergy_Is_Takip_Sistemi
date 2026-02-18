@@ -6,7 +6,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 require_once 'config/db.php';
 require_once 'includes/csrf.php'; // CSRF Koruması
-require_once 'includes/logger.php'; // Sayfanın başına ekleyin
+require_once 'includes/logger.php'; 
 
 // Sadece POST isteklerine izin ver
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

@@ -121,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_customer'])) {
                 <th style="width: 40px;">
                     <input type="checkbox" class="form-check-input" id="selectAllCustomers">
                 </th>
-                <th class="ps-4">Müşteri / Firma Adı</th>
+                <th class="ps-4">Çalışılan Kurum</th>
                 <th>İlgili Kişi</th>
                 <th>İletişim Bilgileri</th>
                 <th>Kayıt Bilgileri</th>

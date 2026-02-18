@@ -21,8 +21,9 @@ $params = [];
 
 // Hizmet Türü Filtresi [cite: 47]
 if (!empty($_GET['service_type'])) {
-    $where_clauses[] = "j.service_type = ?";
-    $params[] = $_GET['service_type'];
+    // JSON array içinde hizmet türü arama
+    $where_clauses[] = "j.service_type LIKE ?";
+    $params[] = '%' . $_GET['service_type'] . '%';
 }
 
 // Durum Filtresi [cite: 50]
@@ -189,14 +190,14 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
 
             <div class="col-lg-3 col-md-6">
                 <label class="form-label small fw-bold text-muted mb-2">
-                    <i class="bi bi-calendar-range me-1"></i>Başlangıç Tarihi
+                    <i class="bi bi-calendar-range me-1"></i>Söz. Başlangıç Tarihi
                 </label>
                 <input type="date" name="date_start" class="form-control border-light-subtle" style="border-radius: 0.6rem;" value="<?php echo htmlspecialchars($_GET['date_start'] ?? ''); ?>">
             </div>
 
             <div class="col-lg-2 col-md-6">
                 <label class="form-label small fw-bold text-muted mb-2">
-                    <i class="bi bi-calendar-check me-1"></i>Bitiş Tarihi
+                    <i class="bi bi-calendar-check me-1"></i>Söz. Bitiş Tarihi
                 </label>
                 <input type="date" name="date_end" class="form-control border-light-subtle" style="border-radius: 0.6rem;" value="<?php echo htmlspecialchars($_GET['date_end'] ?? ''); ?>">
             </div>
@@ -311,16 +312,19 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
                 $is_completed = in_array($job['status'], ['Tamamlandı', 'İptal']);
                 
                 // Gün farkını hesapla
-                $due_date_obj = new DateTime($job['due_date']);
-                $today_obj = new DateTime($today);
-                $diff = $today_obj->diff($due_date_obj);
-                $days_diff = (int)$diff->format('%r%a'); // + gelecek, - geçmiş
+                $days_diff = null;
+                if (!empty($job['due_date'])) {
+                    $due_date_obj = new DateTime($job['due_date']);
+                    $today_obj = new DateTime($today);
+                    $diff = $today_obj->diff($due_date_obj);
+                    $days_diff = (int)$diff->format('%r%a'); // + gelecek, - geçmiş
+                }
                 
                 // Durum belirle
-                $is_delayed = ($days_diff < 0 && !$is_completed);
-                $is_today = ($days_diff == 0 && !$is_completed);
-                $is_urgent = ($days_diff > 0 && $days_diff <= 3 && !$is_completed); // 1-3 gün kaldı
-                $is_soon = ($days_diff > 3 && $days_diff <= 7 && !$is_completed); // 4-7 gün kaldı
+                $is_delayed = ($days_diff !== null && $days_diff < 0 && !$is_completed);
+                $is_today = ($days_diff !== null && $days_diff == 0 && !$is_completed);
+                $is_urgent = ($days_diff !== null && $days_diff > 0 && $days_diff <= 3 && !$is_completed); // 1-3 gün kaldı
+                $is_soon = ($days_diff !== null && $days_diff > 3 && $days_diff <= 7 && !$is_completed); // 4-7 gün kaldı
                 
                 // Satır rengini belirle
                 $row_class = '';
@@ -333,7 +337,22 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
                     <input type="checkbox" class="form-check-input job-checkbox" name="job_ids[]" value="<?php echo $job['id']; ?>">
                 </td>
                 <td><strong><?php echo htmlspecialchars($job['customer_name']); ?></strong></td>
-                <td><span class="badge bg-light text-dark border"><?php echo htmlspecialchars($job['service_type']); ?></span></td>
+                <td>
+                    <?php 
+                    $service_types = [];
+                    if (!empty($job['service_type'])) {
+                        $service_types = json_decode($job['service_type'], true);
+                        if (!is_array($service_types)) {
+                            $service_types = [$job['service_type']];
+                        }
+                    }
+                    foreach($service_types as $service): 
+                    ?>
+                        <span class="badge bg-light text-dark border me-1 mb-1">
+                            <?php echo htmlspecialchars($service); ?>
+                        </span>
+                    <?php endforeach; ?>
+                </td>
                 <td>
                     <?php if($job['staff_name']): ?>
                         <?php echo htmlspecialchars($job['staff_name']); ?>
@@ -350,7 +369,7 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
                     <?php endif; ?>
                 </td>
                 <td>
-                    <?php echo date('d.m.Y', strtotime($job['due_date'])); ?>
+                    <?php echo !empty($job['due_date']) ? date('d.m.Y', strtotime($job['due_date'])) : '-'; ?>
                     <?php if(!$is_completed): ?>
                         <br>
                         <?php if($is_delayed): ?>

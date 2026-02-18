@@ -241,15 +241,18 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
                             <?php foreach($results as $job): 
                                 // Gecikme kontrolü
                                 $is_completed = in_array($job['status'], ['Tamamlandı', 'İptal']);
-                                $due_date_obj = new DateTime($job['due_date']);
-                                $today_obj = new DateTime($today);
-                                $diff = $today_obj->diff($due_date_obj);
-                                $days_diff = (int)$diff->format('%r%a');
+                                $days_diff = null;
+                                if (!empty($job['due_date'])) {
+                                    $due_date_obj = new DateTime($job['due_date']);
+                                    $today_obj = new DateTime($today);
+                                    $diff = $today_obj->diff($due_date_obj);
+                                    $days_diff = (int)$diff->format('%r%a');
+                                }
                                 
                                 $row_class = '';
-                                if (!$is_completed && $days_diff < 0) {
+                                if (!$is_completed && $days_diff !== null && $days_diff < 0) {
                                     $row_class = 'table-danger';
-                                } elseif (!$is_completed && $days_diff == 0) {
+                                } elseif (!$is_completed && $days_diff !== null && $days_diff == 0) {
                                     $row_class = 'table-warning';
                                 }
                             ?>
@@ -267,9 +270,20 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <span class="badge bg-light text-dark border">
-                                        <?php echo htmlspecialchars($job['service_type']); ?>
-                                    </span>
+                                    <?php 
+                                    $service_types = [];
+                                    if (!empty($job['service_type'])) {
+                                        $service_types = json_decode($job['service_type'], true);
+                                        if (!is_array($service_types)) {
+                                            $service_types = [$job['service_type']];
+                                        }
+                                    }
+                                    foreach($service_types as $service): 
+                                    ?>
+                                        <span class="badge bg-light text-dark border me-1 mb-1">
+                                            <?php echo htmlspecialchars($service); ?>
+                                        </span>
+                                    <?php endforeach; ?>
                                 </td>
                                 <td>
                                     <?php if($job['staff_name']): ?>

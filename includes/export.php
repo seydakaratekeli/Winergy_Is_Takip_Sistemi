@@ -64,8 +64,8 @@ function export_jobs($db, $filters = [], $selected_ids = null) {
     
     // Hizmet Türü Filtresi
     if (!empty($filters['service_type'])) {
-        $where_clauses[] = "j.service_type = ?";
-        $params[] = $filters['service_type'];
+        $where_clauses[] = "j.service_type LIKE ?";
+        $params[] = '%' . $filters['service_type'] . '%';
     }
     
     // Durum Filtresi
@@ -182,9 +182,20 @@ function export_jobs($db, $filters = [], $selected_ids = null) {
             $phone = "'" . $phone;
         }
         
+        // service_type'ı JSON'dan decode et ve virgülle birleştir
+        $service_types_str = '';
+        if (!empty($job['service_type'])) {
+            $service_types = json_decode($job['service_type'], true);
+            if (is_array($service_types)) {
+                $service_types_str = implode(', ', $service_types);
+            } else {
+                $service_types_str = $job['service_type'];
+            }
+        }
+        
         export_csv_row([
             $job['id'],
-            $job['service_type'] ?? '',
+            $service_types_str,
             $status,
             $job['customer_name'] ?? '',
             $job['customer_contact'] ?? '-',

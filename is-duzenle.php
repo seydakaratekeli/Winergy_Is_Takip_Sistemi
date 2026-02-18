@@ -34,46 +34,50 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
 
     $customer_id = $_POST['customer_id'];
-    $service_type = $_POST['service_type'];
-    $title = trim($_POST['title']); // İş başlığını temizle
-    $description = trim($_POST['description']); // Açıklamayı temizle
-    $assigned_user_id = !empty($_POST['assigned_user_id']) ? $_POST['assigned_user_id'] : null;
-    $start_date = $_POST['start_date'];
-    $due_date = $_POST['due_date'];
-    $status = $_POST['status'];
-
-
+    // service_type array olarak gelecek (multiple select)
+    $service_types = $_POST['service_type'] ?? [];
     
-
-    
-    // TARİH VALİDASYONU: Başlangıç tarihi bitiş tarihinden önce olmalı
-    $error = "";
-    if (!empty($start_date) && !empty($due_date) && $start_date > $due_date) {
-        $error = "Başlangıç tarihi, bitiş tarihinden sonra olamaz!";
-    }
-    
-    if ($error) {
-        // Hata varsa sayfada göster (header ekledikten sonra)
-        $_SESSION['temp_error'] = $error;
+    if (empty($service_types)) {
+        $_SESSION['temp_error'] = "En az bir hizmet türü seçmelisiniz!";
     } else {
-        $sql = "UPDATE jobs SET 
-                customer_id = ?, 
-                service_type = ?, 
-                title = ?, 
-                description = ?, 
-                assigned_user_id = ?, 
-                start_date = ?, 
-                due_date = ?,
-                status = ?,
-                updated_by = ?,
-                updated_at = NOW()
-                WHERE id = ?";
+        $service_type = json_encode($service_types, JSON_UNESCAPED_UNICODE);
+        $title = trim($_POST['title']); // İş başlığını temizle
+        $description = trim($_POST['description']); // Açıklamayı temizle
+        $assigned_user_id = !empty($_POST['assigned_user_id']) ? $_POST['assigned_user_id'] : null;
+        $start_date = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
+        $due_date = !empty($_POST['due_date']) ? $_POST['due_date'] : null;
+        $status = $_POST['status'];
+
         
-        $stmt = $db->prepare($sql);
-        if ($stmt->execute([$customer_id, $service_type, $title, $description, $assigned_user_id, $start_date, $due_date, $status, $_SESSION['user_id'], $id])) {
-        log_activity('İş Güncellendi', "İş Başlığı: $title (ID: $id)", 'INFO');    
-        header("Location: is-detay.php?id=$id&updated=1");
-            exit;
+        // TARİH VALİDASYONU: Başlangıç tarihi bitiş tarihinden önce olmalı
+        $error = "";
+        if (!empty($start_date) && !empty($due_date) && $start_date > $due_date) {
+            $error = "Başlangıç tarihi, bitiş tarihinden sonra olamaz!";
+        }
+        
+        if ($error) {
+            // Hata varsa sayfada göster (header ekledikten sonra)
+            $_SESSION['temp_error'] = $error;
+        } else {
+            $sql = "UPDATE jobs SET 
+                    customer_id = ?, 
+                    service_type = ?, 
+                    title = ?, 
+                    description = ?, 
+                    assigned_user_id = ?, 
+                    start_date = ?, 
+                    due_date = ?,
+                    status = ?,
+                    updated_by = ?,
+                    updated_at = NOW()
+                    WHERE id = ?";
+            
+            $stmt = $db->prepare($sql);
+            if ($stmt->execute([$customer_id, $service_type, $title, $description, $assigned_user_id, $start_date, $due_date, $status, $_SESSION['user_id'], $id])) {
+            log_activity('İş Güncellendi', "İş Başlığı: $title (ID: $id)", 'INFO');    
+            header("Location: is-detay.php?id=$id&updated=1");
+                exit;
+            }
         }
     }
 }
@@ -107,7 +111,7 @@ include 'includes/header.php';
                 </div>
             </div>
             <div class="card-body">
-                <form method="POST">
+                <form method="POST" id="jobEditForm">
                     <?php echo csrf_input(); ?>
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -126,21 +130,49 @@ include 'includes/header.php';
                         </div>
 
                         <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">Hizmet Türü</label>
-                            <select name="service_type" class="form-select" required>
+                            <label class="form-label fw-bold">Hizmet Türü <span class="text-danger">*</span></label>
+                            <div class="border rounded p-3 bg-light">
                                 <?php 
-                                $services = ['Enerji Etüdü', 'ISO 50001', 'EKB', 'Enerji Yöneticisi'];
-                                foreach($services as $service): ?>
-                                    <option value="<?php echo $service; ?>" <?php echo $service == $job['service_type'] ? 'selected' : ''; ?>>
-                                        <?php echo $service; ?>
-                                    </option>
+                                // Job'dan service_type'ı decode et
+                                $selected_services = [];
+                                if (!empty($job['service_type'])) {
+                                    $selected_services = json_decode($job['service_type'], true);
+                                    if (!is_array($selected_services)) {
+                                        $selected_services = [$job['service_type']];
+                                    }
+                                }
+                                
+                                $services_data = [
+                                    ['id' => 'service_1', 'value' => 'Enerji Etüdü', 'label' => 'Enerji Etüdü'],
+                                    ['id' => 'service_2', 'value' => 'ISO 50001', 'label' => 'ISO 50001'],
+                                    ['id' => 'service_3', 'value' => 'EKB', 'label' => 'Enerji Kimlik Belgesi (EKB)'],
+                                    ['id' => 'service_4', 'value' => 'Enerji Yöneticisi', 'label' => 'Enerji Yöneticisi']
+                                ];
+                                ?>
+                                <?php foreach($services_data as $idx => $service): ?>
+                                <div class="form-check mb-2">
+                                    <input 
+                                        class="form-check-input service-type-check" 
+                                        type="checkbox" 
+                                        name="service_type[]" 
+                                        value="<?php echo htmlspecialchars($service['value']); ?>" 
+                                        id="<?php echo $service['id']; ?>"
+                                        <?php echo in_array($service['value'], $selected_services) ? 'checked' : ''; ?>
+                                    >
+                                    <label class="form-check-label" for="<?php echo $service['id']; ?>">
+                                        <?php echo htmlspecialchars($service['label']); ?>
+                                    </label>
+                                </div>
                                 <?php endforeach; ?>
-                            </select>
+                            </div>
+                            <small class="text-muted d-block mt-2">
+                                <i class="bi bi-info-circle"></i> En az bir hizmet türü seçmelisiniz
+                            </small>
                         </div>
 
                         <div class="col-12 mb-3">
                             <label class="form-label fw-bold">İş / Proje Başlığı</label>
-                            <input type="text" name="title" class="form-control" value="<?php echo htmlspecialchars($job['title']); ?>" required>
+                            <input type="text" name="title" class="form-control" value="<?php echo htmlspecialchars($job['title']); ?>">
                         </div>
 
                         <div class="col-12 mb-3">
@@ -182,13 +214,13 @@ include 'includes/header.php';
                         </div>
 
                         <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">Başlangıç Tarihi</label>
-                            <input type="date" name="start_date" class="form-control" value="<?php echo $job['start_date']; ?>" required>
+                            <label class="form-label fw-bold">Söz. Başlangıç Tarihi</label>
+                            <input type="date" name="start_date" class="form-control" value="<?php echo $job['start_date']; ?>">
                         </div>
                         
                         <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">Teslim Tarihi</label>
-                            <input type="date" name="due_date" class="form-control" value="<?php echo $job['due_date']; ?>" required>
+                            <label class="form-label fw-bold">Söz. Bitiş Tarihi</label>
+                            <input type="date" name="due_date" class="form-control" value="<?php echo $job['due_date']; ?>">
                         </div>
                     </div>
 
@@ -206,5 +238,16 @@ include 'includes/header.php';
         </div>
     </div>
 </div>
+
+<script>
+document.getElementById('jobEditForm').addEventListener('submit', function(e) {
+    const checkedCount = document.querySelectorAll('.service-type-check:checked').length;
+    if (checkedCount === 0) {
+        e.preventDefault();
+        alert('⚠️ En az bir hizmet türü seçmelisiniz!');
+        document.querySelector('.service-type-check').focus();
+    }
+});
+</script>
 
 <?php include 'includes/footer.php'; ?>
