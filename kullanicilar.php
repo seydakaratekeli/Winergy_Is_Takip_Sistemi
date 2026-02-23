@@ -84,11 +84,11 @@ $stats = [
     </div>
     <div class="col-md-6 text-end">
         <!-- Export Butonları -->
-        <button type="button" class="btn btn-success btn-sm me-2" id="exportSelectedUsersBtn" style="display: none;" onclick="exportSelectedUsers()">
-            <i class="bi bi-file-earmark-excel me-1"></i>Seçilenleri Aktar (<span id="exportUserCount">0</span>)
+        <button type="button" class="btn btn-success me-2" id="exportSelectedUsersBtn" style="display: none;" onclick="exportSelectedUsers()">
+            <i class="bi bi-file-earmark-excel me-2"></i>Seçilenleri Aktar (<span id="exportUserCount">0</span>)
         </button>
-        <a href="export-kullanicilar.php" class="btn btn-outline-success btn-sm me-2">
-            <i class="bi bi-file-earmark-excel me-1"></i>Excel'e Aktar
+        <a href="export-kullanicilar.php" class="btn btn-success me-2">
+            <i class="bi bi-file-earmark-excel me-2"></i>Excel'e Aktar
         </a>
         <a href="kullanici-ekle.php" class="btn btn-winergy">
             <i class="bi bi-person-plus"></i> Yeni Kullanıcı Ekle
@@ -264,6 +264,13 @@ function exportSelectedUsers() {
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = 'export-kullanicilar.php';
+    
+    // CSRF token ekle
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrf_token';
+    csrfInput.value = '<?php echo csrf_generate_token(); ?>';
+    form.appendChild(csrfInput);
     
     checkedBoxes.forEach(cb => {
         const input = document.createElement('input');

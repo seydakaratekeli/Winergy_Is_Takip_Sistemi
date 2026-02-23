@@ -8,7 +8,6 @@ if (!isset($_SESSION['user_id'])) {
 require_once 'config/db.php';
 require_once 'includes/csrf.php';
 require_once 'includes/logger.php';
-include 'includes/header.php'; 
 
 $message = "";
 
@@ -24,28 +23,38 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $contact_name = trim($_POST['contact_name']);
     $phone = trim($_POST['phone']);
     $email = trim($_POST['email']);
+    $address = trim($_POST['address'] ?? '');
     $created_by = $_SESSION['user_id'];
 
     try {
-        $sql = "INSERT INTO customers (name, contact_name, phone, email, created_by) VALUES (?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO customers (name, contact_name, phone, email, address, created_by) VALUES (?, ?, ?, ?, ?, ?)";
         $stmt = $db->prepare($sql);
         
-        if ($stmt->execute([$name, $contact_name, $phone, $email, $created_by])) {
+        if ($stmt->execute([$name, $contact_name, $phone, $email, $address, $created_by])) {
             log_activity('Müşteri Eklendi', "Yeni Müşteri: $name", 'SUCCESS');
-            $message = "<div class='alert alert-success'>Müşteri başarıyla eklendi! <a href='musteriler.php' class='alert-link'>Listeye dön</a></div>";
+            header("Location: musteriler.php?added=1");
+            exit;
         }
     } catch (PDOException $e) {
         // Hatayı arka planda kaydet
         log_error("Müşteri ekleme hatası", ['message' => $e->getMessage(), 'customer' => $name]);
         // Kullanıcıya temiz bir hata mesajı ver
-        $message = "<div class='alert alert-danger'>Müşteri kaydedilirken teknik bir sorun oluştu. Lütfen bilgileri kontrol edip tekrar deneyin.</div>";
+        $message = "Müşteri kaydedilirken teknik bir sorun oluştu. Lütfen bilgileri kontrol edip tekrar deneyin.";
     }
 }
+
+// HTML çıktısı başlat
+include 'includes/header.php';
 ?>
 
 <div class="row justify-content-center">
     <div class="col-md-6">
-        <?php echo $message; ?>
+        <?php if ($message): ?>
+            <div class="alert alert-danger alert-dismissible fade show">
+                <i class="bi bi-exclamation-triangle-fill"></i> <?php echo $message; ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
         
         <div class="card shadow-sm border-0">
             <div class="card-header bg-white py-3">
@@ -74,6 +83,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             <label class="form-label small fw-bold">E-Posta</label>
                             <input type="email" name="email" class="form-control" placeholder="mail@firma.com">
                         </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Adres</label>
+                        <textarea name="address" class="form-control" placeholder="Firma adresi" rows="3"></textarea>
                     </div>
 
                     <hr>

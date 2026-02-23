@@ -4,7 +4,8 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
 }
-require_once 'config/db.php'; 
+require_once 'config/db.php';
+require_once 'includes/csrf.php'; 
 
 // Cache engelleme
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
@@ -91,9 +92,53 @@ if (!empty($search_query) || !empty($start_date) || !empty($assigned_user) || !e
     $total_count = count($results);
 }
 
-// Kullanıcı listesi (filtre için)
+// Kullanıcı listesi (filtre ve toplu işlem için)
 $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
 ?>
+
+<!-- Toplu İşlem Bildirimleri -->
+<?php if (isset($_GET['success'])): ?>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <strong>Başarılı!</strong>
+        <?php 
+        $count = $_GET['count'] ?? 0;
+        if ($_GET['success'] == 'status_updated') {
+            echo "$count iş kaydının durumu güncellendi.";
+        } elseif ($_GET['success'] == 'assigned') {
+            echo "$count iş kaydı atandı.";
+        } elseif ($_GET['success'] == 'service_type_updated') {
+            echo "$count iş kaydının hizmet türü güncellendi.";
+        } elseif ($_GET['success'] == 'deleted' || $_GET['success'] == 'cancelled') {
+            echo "$count iş kaydı iptal edildi.";
+        }
+        ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<?php endif; ?>
+
+<?php if (isset($_GET['error'])): ?>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <strong>Hata!</strong>
+        <?php 
+        if ($_GET['error'] == 'no_selection') {
+            echo "Lütfen en az bir iş seçin.";
+        } elseif ($_GET['error'] == 'no_status') {
+            echo "Lütfen bir durum seçin.";
+        } elseif ($_GET['error'] == 'no_user') {
+            echo "Lütfen bir kullanıcı seçin.";
+        } elseif ($_GET['error'] == 'no_service_type') {
+            echo "Lütfen en az bir hizmet türü seçin.";
+        } elseif ($_GET['error'] == 'invalid_action') {
+            echo "Geçersiz işlem.";
+        } else {
+            echo "Bir hata oluştu.";
+        }
+        ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<?php endif; ?>
 
 <div class="row mb-4">
     <div class="col-12">
@@ -214,20 +259,124 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
     </div>
 </div>
 
+<!-- Toplu İşlem Paneli -->
+<div class="card border-0 shadow-sm mb-3" id="bulkActionsPanel" style="display: none; border-left: 4px solid #14b8a6;">
+    <div class="card-body py-3">
+        <form method="POST" action="toplu-islemler.php" id="bulkActionsForm">
+            <?php echo csrf_input(); ?>
+            <div class="row g-2 align-items-end">
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label small fw-bold" style="font-size: 0.9rem; color: #0d9488;">Toplu İşlem Seç</label>
+                    <select name="action" class="form-select form-select-sm" id="bulkAction" required>
+                        <option value="">-- İşlem Seçin --</option>
+                        <option value="change_status">Durum Değiştir</option>
+                        <option value="assign_user">Personel Ata</option>
+                        <option value="change_service_type">Hizmet Türü Değiştir</option>
+                        <?php if ($_SESSION['user_role'] === 'admin'): ?>
+                            <option value="delete">İşleri İptal Et</option>
+                        <?php endif; ?>
+                    </select>
+                </div>
+                
+                <div class="col-lg-3 col-md-6" id="statusSelectDiv" style="display: none;">
+                    <label class="form-label small fw-bold" style="font-size: 0.9rem; color: #0d9488;">Yeni Durum</label>
+                    <select name="new_status" class="form-select form-select-sm">
+                        <option value="Açıldı">Açıldı</option>
+                        <option value="Çalışılıyor">Çalışılıyor</option>
+                        <option value="Beklemede">Beklemede</option>
+                        <option value="Tamamlandı">Tamamlandı</option>
+                        <option value="İptal">İptal</option>
+                    </select>
+                </div>
+                
+                <div class="col-lg-3 col-md-6" id="userSelectDiv" style="display: none;">
+                    <label class="form-label small fw-bold" style="font-size: 0.9rem; color: #0d9488;">Personel</label>
+                    <select name="assign_user_id" class="form-select form-select-sm">
+                        <option value="">Atanmadı</option>
+                        <?php 
+                        $role_tr = [
+                            'admin' => 'Yönetici',
+                            'operasyon' => 'Operasyon',
+                            'danisman' => 'Danışman'
+                        ];
+                        foreach($users as $u): 
+                        ?>
+                            <option value="<?php echo $u['id']; ?>">
+                                <?php echo $u['name']; ?> (<?php echo $role_tr[$u['role']] ?? $u['role']; ?>)
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div class="col-lg-3 col-md-6" id="serviceTypeSelectDiv" style="display: none;">
+                    <label class="form-label small fw-bold" style="font-size: 0.9rem; color: #0d9488;">Hizmet Türü (Çoklu)</label>
+                    <div style="max-height: 120px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.25rem; padding: 0.5rem;">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="service_type[]" value="Enerji Etüdü" id="bulk_service_1">
+                            <label class="form-check-label small" for="bulk_service_1">Enerji Etüdü</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="service_type[]" value="ISO 50001" id="bulk_service_2">
+                            <label class="form-check-label small" for="bulk_service_2">ISO 50001</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="service_type[]" value="EKB" id="bulk_service_3">
+                            <label class="form-check-label small" for="bulk_service_3">Enerji Kimlik Belgesi (EKB)</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="service_type[]" value="Enerji Yöneticisi" id="bulk_service_4">
+                            <label class="form-check-label small" for="bulk_service_4">Enerji Yöneticisi</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="service_type[]" value="VAP" id="bulk_service_5">
+                            <label class="form-check-label small" for="bulk_service_5">VAP</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="service_type[]" value="Danışmanlık" id="bulk_service_6">
+                            <label class="form-check-label small" for="bulk_service_6">Danışmanlık</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="service_type[]" value="Rapor Onay" id="bulk_service_7">
+                            <label class="form-check-label small" for="bulk_service_7">Rapor Onay</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="service_type[]" value="Bakım" id="bulk_service_8">
+                            <label class="form-check-label small" for="bulk_service_8">Bakım</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6">
+                    <button type="submit" class="btn btn-winergy w-100 btn-sm" id="bulkSubmitBtn">
+                        <i class="bi bi-check-circle me-1"></i>Uygula (<span id="selectedCount">0</span>)
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Arama Sonuçları -->
 <?php if (!empty($search_query) || !empty($start_date) || !empty($assigned_user) || !empty($status_filter)): ?>
     <?php if ($total_count > 0): ?>
         <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-0">
+            <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 fw-bold">
                     <i class="bi bi-list-check me-2"></i>Arama Sonuçları
                 </h5>
+                <button type="button" class="btn btn-success btn-sm" id="exportSelectedBtn" style="display: none;" onclick="exportSelected()">
+                    <i class="bi bi-file-earmark-excel me-1"></i>Seçilenleri Aktar (<span id="exportCount">0</span>)
+                </button>
             </div>
             <div class="card-body p-0">
+                <form id="searchResultsForm">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
+                                <th style="width: 40px;">
+                                    <input type="checkbox" class="form-check-input" id="selectAll">
+                                </th>
                                 <th><i class="bi bi-building"></i> Müşteri</th>
                                 <th><i class="bi bi-briefcase"></i> İş Başlığı</th>
                                 <th><i class="bi bi-gear"></i> Hizmet</th>
@@ -257,6 +406,9 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
                                 }
                             ?>
                             <tr class="<?php echo $row_class; ?>">
+                                <td>
+                                    <input type="checkbox" class="form-check-input job-checkbox" name="job_ids[]" value="<?php echo $job['id']; ?>">
+                                </td>
                                 <td>
                                     <strong><?php echo htmlspecialchars($job['customer_name']); ?></strong>
                                     <?php if($job['contact_name']): ?>
@@ -334,6 +486,7 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
                         </tbody>
                     </table>
                 </div>
+                </form>
             </div>
         </div>
     <?php else: ?>
@@ -368,5 +521,169 @@ $users = $db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER 
         </div>
     </div>
 <?php endif; ?>
+
+<script>
+// Seçili iş sayısını güncelle
+function updateSelectedCount() {
+    const count = document.querySelectorAll('.job-checkbox:checked').length;
+    const selectedCountEl = document.getElementById('selectedCount');
+    const exportCountEl = document.getElementById('exportCount');
+    if (selectedCountEl) selectedCountEl.textContent = count;
+    if (exportCountEl) exportCountEl.textContent = count;
+}
+
+// Toplu işlem panelini göster/gizle
+function toggleBulkPanel() {
+    const count = document.querySelectorAll('.job-checkbox:checked').length;
+    const panel = document.getElementById('bulkActionsPanel');
+    const exportBtn = document.getElementById('exportSelectedBtn');
+    
+    if (panel) panel.style.display = count > 0 ? 'block' : 'none';
+    if (exportBtn) exportBtn.style.display = count > 0 ? 'inline-block' : 'none';
+}
+
+// Sayfa yüklendiğinde event listener'ları ekle
+window.addEventListener('load', function() {
+    // Tüm seçimi yönet
+    const selectAllCheckbox = document.getElementById('selectAll');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.job-checkbox');
+            checkboxes.forEach(cb => cb.checked = this.checked);
+            updateSelectedCount();
+            toggleBulkPanel();
+        });
+    }
+
+    // Event delegation ile checkbox değişimlerini dinle
+    const searchForm = document.getElementById('searchResultsForm');
+    if (searchForm) {
+        searchForm.addEventListener('change', function(e) {
+            if (e.target && e.target.classList.contains('job-checkbox')) {
+                updateSelectedCount();
+                toggleBulkPanel();
+                
+                // Tümü seçiliyse selectAll'ı işaretle
+                const allCheckboxes = document.querySelectorAll('.job-checkbox');
+                const checkedCheckboxes = document.querySelectorAll('.job-checkbox:checked');
+                const selectAll = document.getElementById('selectAll');
+                
+                if (selectAll && allCheckboxes.length > 0) {
+                    selectAll.checked = allCheckboxes.length === checkedCheckboxes.length;
+                }
+            }
+        });
+    }
+
+    // İşlem tipine göre ek alanları göster
+    const bulkActionSelect = document.getElementById('bulkAction');
+    if (bulkActionSelect) {
+        bulkActionSelect.addEventListener('change', function() {
+            const statusDiv = document.getElementById('statusSelectDiv');
+            const userDiv = document.getElementById('userSelectDiv');
+            
+            const serviceDiv = document.getElementById('serviceTypeSelectDiv');
+            
+            if (statusDiv) statusDiv.style.display = 'none';
+            if (userDiv) userDiv.style.display = 'none';
+            if (serviceDiv) serviceDiv.style.display = 'none';
+            
+            if (this.value === 'change_status') {
+                if (statusDiv) statusDiv.style.display = 'block';
+            } else if (this.value === 'assign_user') {
+                if (userDiv) userDiv.style.display = 'block';
+            } else if (this.value === 'change_service_type') {
+                if (serviceDiv) serviceDiv.style.display = 'block';
+            }
+        });
+    }
+
+    // Form gönderiminde seçili ID'leri aktar
+    const bulkActionsForm = document.getElementById('bulkActionsForm');
+    if (bulkActionsForm) {
+        bulkActionsForm.addEventListener('submit', function(e) {
+            const checkedBoxes = document.querySelectorAll('.job-checkbox:checked');
+            if (checkedBoxes.length === 0) {
+                e.preventDefault();
+                alert('Lütfen en az bir iş seçin!');
+                return false;
+            }
+            
+            // İşleme göre özel onay mesajı
+            const action = document.getElementById('bulkAction').value;
+            let confirmMsg = 'Seçili işleri güncellemek istediğinize emin misiniz?';
+            
+            if (action === 'delete') {
+                confirmMsg = `${checkedBoxes.length} adet iş kaydını iptal etmek istediğinizden emin misiniz?\n\n` +
+                             `⚠️ İşler "İptal" durumuna alınacaktır.\n` +
+                             `✓ Veriler silinmez, gerekirse geri alınabilir.`;
+            } else if (action === 'change_status') {
+                const newStatus = document.querySelector('[name="new_status"]').value;
+                confirmMsg = `${checkedBoxes.length} adet işin durumunu "${newStatus}" olarak değiştirmek istiyor musunuz?`;
+            } else if (action === 'assign_user') {
+                const userName = document.querySelector('[name="assign_user_id"] option:checked').text;
+                confirmMsg = `${checkedBoxes.length} adet işi "${userName}" kişisine atamak istiyor musunuz?`;
+            } else if (action === 'change_service_type') {
+                const selectedServices = document.querySelectorAll('[name="service_type[]"]:checked');
+                if (selectedServices.length === 0) {
+                    e.preventDefault();
+                    alert('Lütfen en az bir hizmet türü seçin!');
+                    return false;
+                }
+                confirmMsg = `${checkedBoxes.length} adet işin hizmet türünü değiştirmek istiyor musunuz?`;
+            }
+            
+            if (!confirm(confirmMsg)) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Mevcut job_ids inputlarını temizle
+            this.querySelectorAll('input[name="job_ids[]"]').forEach(input => input.remove());
+            
+            // Yeni inputları ekle
+            checkedBoxes.forEach(cb => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'job_ids[]';
+                input.value = cb.value;
+                this.appendChild(input);
+            });
+        });
+    }
+});
+
+// Seçili kayıtları export et
+function exportSelected() {
+    const checkedBoxes = document.querySelectorAll('.job-checkbox:checked');
+    if (checkedBoxes.length === 0) {
+        alert('Lütfen en az bir iş seçin!');
+        return;
+    }
+    
+    // Form oluştur ve gönder
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = 'export-isler.php<?php echo !empty($_GET) ? "?" . http_build_query($_GET) : ""; ?>';
+    
+    // CSRF token ekle
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrf_token';
+    csrfInput.value = '<?php echo csrf_generate_token(); ?>';
+    form.appendChild(csrfInput);
+    
+    checkedBoxes.forEach(cb => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'selected_jobs[]';
+        input.value = cb.value;
+        form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+</script>
 
 <?php include 'includes/footer.php'; ?>

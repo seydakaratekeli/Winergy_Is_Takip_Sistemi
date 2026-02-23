@@ -190,7 +190,7 @@
     <div class="container">
         <div class="row align-items-center justify-content-between g-3">
             <div class="col-lg-3 col-md-4 col-6">
-                <a href="index.php">
+                <a href="https://winergytechnologies.com" target="_blank" rel="noopener noreferrer">
                     <img src="assets/images/winergy-logo.png" alt="Winergy Technologies" class="navbar-logo">
                 </a>
             </div>
@@ -257,6 +257,11 @@
                         <i class="bi bi-journal-text me-1"></i> Sistem Logları
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'toplu-import.php' ? 'active' : ''; ?>" href="toplu-import.php">
+                        <i class="bi bi-file-earmark-spreadsheet me-1"></i> Toplu Import
+                    </a>
+                </li>
                 <?php endif; ?>
             </ul>
             
@@ -275,10 +280,6 @@
             </form>
             
             <ul class="navbar-nav ms-2">
-                <li class="nav-item me-2">
-                    <a class="btn btn-light text-dark fw-bold my-2 px-3" href="is-ekle.php" style="border-radius: 8px; font-size: 1.3rem;">
-                        <i class="bi bi-plus-circle-fill me-1"></i> İş Kayıt
-                    </a>
                 <li class="nav-item dropdown">
                     <button class="btn btn-outline-light dropdown-toggle my-2 px-3" type="button" data-bs-toggle="dropdown" style="border-radius: 8px; font-size: 1.5rem; min-width: 160px;">
                         <i class="bi bi-person-circle me-1"></i> <?php echo mb_substr($_SESSION['user_name'] ?? 'Kullanıcı', 0, 15); ?>

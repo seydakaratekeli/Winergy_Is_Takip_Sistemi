@@ -214,10 +214,10 @@ function export_jobs($db, $filters = [], $selected_ids = null) {
             $withholding_label = $withholding_labels[$job['invoice_withholding']] ?? '-';
         }
         
-        // Tutar formatlama - gereksiz sıfırları kaldır
+        // Tutar formatlama
         $format_amount = function($amount) {
             if (empty($amount)) return '-';
-            return rtrim(rtrim(number_format($amount, 2, ',', '.'), '0'), ',') . ' TL';
+            return number_format($amount, 2, ',', '.') . ' TL';
         };
         
         export_csv_row([

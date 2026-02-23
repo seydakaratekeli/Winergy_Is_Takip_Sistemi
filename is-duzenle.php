@@ -33,9 +33,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
     
 
+    // Türk formatından (11.250,00) İngilizce formata (11250.00) çevir
+    function convertTurkishToDecimal($value) {
+        if (empty($value)) return null;
+        // Nokta (binlik ayırıcı) kaldır, virgül (ondalık ayırıcı) noktaya çevir
+        $value = str_replace('.', '', $value);
+        $value = str_replace(',', '.', $value);
+        return is_numeric($value) ? $value : null;
+    }
+    
     $customer_id = $_POST['customer_id'];
-    // service_type array olarak gelecek (multiple select)
+    // service_type array olarak gelecek
     $service_types = $_POST['service_type'] ?? [];
+
+    // "Diğer" seçeneği işaretlenmişse ve metin girilmişse listeye ekle
+    if (!empty($_POST['service_type_other'])) {
+        $other_service = trim($_POST['service_type_other']);
+        if ($other_service !== '') {
+            $service_types[] = $other_service;
+        }
+    }
     
     if (empty($service_types)) {
         $_SESSION['temp_error'] = "En az bir hizmet türü seçmelisiniz!";
@@ -46,10 +63,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $assigned_user_id = !empty($_POST['assigned_user_id']) ? $_POST['assigned_user_id'] : null;
         $start_date = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
         $due_date = !empty($_POST['due_date']) ? $_POST['due_date'] : null;
-        $invoice_amount = !empty($_POST['invoice_amount']) ? $_POST['invoice_amount'] : null;
+        $invoice_amount = convertTurkishToDecimal($_POST['invoice_amount'] ?? '');
         $invoice_vat_included = isset($_POST['invoice_vat_included']) ? (int)$_POST['invoice_vat_included'] : null;
         $invoice_date = !empty($_POST['invoice_date']) ? $_POST['invoice_date'] : null;
-        $invoice_total_amount = !empty($_POST['invoice_total_amount']) ? $_POST['invoice_total_amount'] : null;
+        $invoice_total_amount = convertTurkishToDecimal($_POST['invoice_total_amount'] ?? '');
         $invoice_withholding = !empty($_POST['invoice_withholding']) ? $_POST['invoice_withholding'] : 'belirtilmedi';
         $status = $_POST['status'];
 
@@ -108,7 +125,7 @@ include 'includes/header.php';
 <?php endif; ?>
 
 <div class="row justify-content-center">
-    <div class="col-md-8">
+    <div class="col-md-10">
         <div class="card shadow-sm">
             <div class="card-header bg-white py-3">
                 <div class="d-flex justify-content-between align-items-center">
@@ -125,23 +142,80 @@ include 'includes/header.php';
                     <?php echo csrf_input(); ?>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">Müşteri</label>
-                            <select name="customer_id" class="form-select" required>
-                                <option value="">--- Müşteri Seçiniz ---</option>
-                                <?php foreach($customers as $c): ?>
-                                    <option value="<?php echo $c['id']; ?>" <?php echo $c['id'] == $job['customer_id'] ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($c['name']); ?>
-                                        <?php if(!empty($c['contact_name'])): ?>
-                                            - <?php echo htmlspecialchars($c['contact_name']); ?>
-                                        <?php endif; ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
+                            <label class="form-label fw-bold" style="cursor: pointer;" onclick="showCustomerSelection()">
+                                Müşteri <span class="text-danger">*</span>
+                                <i class="bi bi-pencil-square text-muted ms-1" style="font-size: 0.9rem;"></i>
+                            </label>
+                            
+                            <!-- Seçilen Müşteri Gösterimi -->
+                            <div id="selectedCustomerDisplay">
+                                <div class="card border-success" style="cursor: pointer;" onclick="showCustomerSelection()">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                            <strong id="selectedCustomerName" class="flex-grow-1">
+                                                <?php 
+                                                $current_customer = array_filter($customers, fn($c) => $c['id'] == $job['customer_id']);
+                                                $current_customer = reset($current_customer);
+                                                if ($current_customer) {
+                                                    echo htmlspecialchars($current_customer['name']);
+                                                    if (!empty($current_customer['contact_name'])) {
+                                                        echo ' - ' . htmlspecialchars($current_customer['contact_name']);
+                                                    }
+                                                }
+                                                ?>
+                                            </strong>
+                                            <small class="text-muted">
+                                                <i class="bi bi-pencil"></i> Değiştir
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Müşteri Seçim Alanı -->
+                            <div id="customerSelectionArea" class="d-none">
+                                <!-- Müşteri Arama -->
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text bg-light">
+                                        <i class="bi bi-search"></i>
+                                    </span>
+                                    <input type="text" id="customerSearch" class="form-control" placeholder="Müşteri veya ilgili kişi ara..." autocomplete="off">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="clearCustomerSearch()" title="Aramayı Temizle">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                                
+                                <!-- Müşteri Select -->
+                                <div class="input-group">
+                                    <select name="customer_id" id="customerSelect" class="form-select" required size="6" style="height: auto;">
+                                        <option value="">--- Müşteri Seçiniz ---</option>
+                                        <?php foreach($customers as $c): ?>
+                                            <option value="<?php echo $c['id']; ?>" 
+                                                    <?php echo $c['id'] == $job['customer_id'] ? 'selected' : ''; ?>
+                                                    data-name="<?php echo htmlspecialchars(strtolower($c['name'])); ?>"
+                                                    data-contact="<?php echo htmlspecialchars(strtolower($c['contact_name'] ?? '')); ?>"
+                                                    data-fullname="<?php echo htmlspecialchars($c['name']); ?><?php echo !empty($c['contact_name']) ? ' - ' . htmlspecialchars($c['contact_name']) : ''; ?>">
+                                                <?php echo htmlspecialchars($c['name']); ?>
+                                                <?php if(!empty($c['contact_name'])): ?>
+                                                    - <?php echo htmlspecialchars($c['contact_name']); ?>
+                                                <?php endif; ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <a href="musteri-ekle.php" class="btn btn-outline-primary" title="Yeni Müşteri Ekle">
+                                        <i class="bi bi-person-plus"></i>
+                                    </a>
+                                </div>
+                                <small class="text-muted d-block mt-1">
+                                    <i class="bi bi-info-circle"></i> Arama yaparak müşteriyi hızlıca bulabilirsiniz
+                                </small>
+                            </div>
                         </div>
 
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">Hizmet Türü <span class="text-danger">*</span></label>
-                            <div class="border rounded p-3 bg-light">
+                            <div class="border rounded p-3 bg-light" style="max-height: 320px; overflow-y: auto;">
                                 <?php 
                                 // Job'dan service_type'ı decode et
                                 $selected_services = [];
@@ -156,10 +230,16 @@ include 'includes/header.php';
                                     ['id' => 'service_1', 'value' => 'Enerji Etüdü', 'label' => 'Enerji Etüdü'],
                                     ['id' => 'service_2', 'value' => 'ISO 50001', 'label' => 'ISO 50001'],
                                     ['id' => 'service_3', 'value' => 'EKB', 'label' => 'Enerji Kimlik Belgesi (EKB)'],
-                                    ['id' => 'service_4', 'value' => 'Enerji Yöneticisi', 'label' => 'Enerji Yöneticisi']
+                                    ['id' => 'service_4', 'value' => 'Enerji Yöneticisi', 'label' => 'Enerji Yöneticisi'],
+                                    ['id' => 'service_5', 'value' => 'VAP', 'label' => 'VAP (Verimlilik Artırıcı Proje)'],
+                                    ['id' => 'service_6', 'value' => 'Danışmanlık', 'label' => 'Danışmanlık'],
+                                    ['id' => 'service_7', 'value' => 'Rapor Onay', 'label' => 'Rapor Onay'],
+                                    ['id' => 'service_8', 'value' => 'Bakım', 'label' => 'Bakım']
                                 ];
+                                
+                                // Standart hizmetleri göster
+                                foreach($services_data as $idx => $service):
                                 ?>
-                                <?php foreach($services_data as $idx => $service): ?>
                                 <div class="form-check mb-2">
                                     <input 
                                         class="form-check-input service-type-check" 
@@ -174,6 +254,43 @@ include 'includes/header.php';
                                     </label>
                                 </div>
                                 <?php endforeach; ?>
+                                
+                                <?php
+                                // Standart hizmet listesini al
+                                $standard_services = array_column($services_data, 'value');
+                                // Seçili hizmetlerden standart olmayanı bul ("Diğer" hizmet)
+                                $other_service = '';
+                                foreach($selected_services as $service) {
+                                    if (!in_array($service, $standard_services)) {
+                                        $other_service = $service;
+                                        break;
+                                    }
+                                }
+                                ?>
+                                
+                                <div class="form-check mt-2 pt-2 border-top">
+                                    <input 
+                                        class="form-check-input service-type-check" 
+                                        type="checkbox" 
+                                        id="check_other" 
+                                        onclick="toggleOtherInput()"
+                                        <?php echo !empty($other_service) ? 'checked' : ''; ?>
+                                    >
+                                    <label class="form-check-label fw-bold" for="check_other">
+                                        <i class="bi bi-plus-circle"></i> Diğer (Özel Hizmet)
+                                    </label>
+                                </div>
+                                <div id="div_other_input" class="mt-2" style="display:<?php echo !empty($other_service) ? 'block' : 'none'; ?>;">
+                                    <input 
+                                        type="text" 
+                                        name="service_type_other" 
+                                        id="input_other" 
+                                        class="form-control form-control-sm" 
+                                        placeholder="Hizmet türünü yazınız..."
+                                        value="<?php echo htmlspecialchars($other_service); ?>"
+                                    >
+                                    <small class="text-muted"><i class="bi bi-info-circle"></i> Listede olmayan özel hizmet türünü girebilirsiniz</small>
+                                </div>
                             </div>
                             <small class="text-muted d-block mt-2">
                                 <i class="bi bi-info-circle"></i> En az bir hizmet türü seçmelisiniz
@@ -239,13 +356,13 @@ include 'includes/header.php';
                     <div class="row">
                         <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold">Kesilecek Fatura Tutarı (₺)</label>
-                            <input type="number" name="invoice_amount" class="form-control" step="0.01" min="0" placeholder="0" value="<?php echo $job['invoice_amount'] ?? ''; ?>">
-                            <small class="text-muted">KDV hariç/dahil tutar</small>
+                            <input type="text" name="invoice_amount" id="invoice_amount" class="form-control" placeholder="0,00" value="<?php echo !empty($job['invoice_amount']) ? number_format($job['invoice_amount'], 2, ',', '.') : ''; ?>" onkeyup="formatCurrency(this)">
+                            <small class="text-muted">KDV hariç/dahil tutar (örn: 11.250,00)</small>
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold">Toplam Tutar (₺)</label>
-                            <input type="number" name="invoice_total_amount" class="form-control" step="0.01" min="0" placeholder="0" value="<?php echo $job['invoice_total_amount'] ?? ''; ?>">
-                            <small class="text-muted">Nihai ödenecek tutar</small>
+                            <input type="text" name="invoice_total_amount" id="invoice_total_amount" class="form-control" placeholder="0,00" value="<?php echo !empty($job['invoice_total_amount']) ? number_format($job['invoice_total_amount'], 2, ',', '.') : ''; ?>" onkeyup="formatCurrency(this)">
+                            <small class="text-muted">Nihai ödenecek tutar (örn: 11.250,00)</small>
                         </div>
                         <div class="col-md-2 mb-3">
                             <label class="form-label fw-bold">KDV Durumu</label>
@@ -285,12 +402,174 @@ include 'includes/header.php';
 </div>
 
 <script>
+// Form validation - Alert kullanmadan
 document.getElementById('jobEditForm').addEventListener('submit', function(e) {
+    let isValid = true;
+    
+    // Hizmet türü kontrolü
     const checkedCount = document.querySelectorAll('.service-type-check:checked').length;
+    const serviceValidation = document.querySelector('.service-type-check').closest('.col-md-6').querySelector('.text-muted');
+    
     if (checkedCount === 0) {
         e.preventDefault();
-        alert('⚠️ En az bir hizmet türü seçmelisiniz!');
-        document.querySelector('.service-type-check').focus();
+        isValid = false;
+        
+        // Hata mesajı göster
+        if (serviceValidation) {
+            serviceValidation.innerHTML = '<i class="bi bi-exclamation-triangle-fill text-danger"></i> <strong class="text-danger">En az bir hizmet türü seçmelisiniz!</strong>';
+            serviceValidation.classList.add('text-danger');
+        }
+        
+        // Scroll to error
+        document.querySelector('.service-type-check').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+});
+
+// Müşteri Arama ve Seçim Fonksiyonları
+const customerSearch = document.getElementById('customerSearch');
+const customerSelect = document.getElementById('customerSelect');
+const selectedCustomerDisplay = document.getElementById('selectedCustomerDisplay');
+const selectedCustomerName = document.getElementById('selectedCustomerName');
+const customerSelectionArea = document.getElementById('customerSelectionArea');
+
+// Müşteri seçildiğinde göster
+if (customerSelect) {
+    customerSelect.addEventListener('change', function() {
+        if (this.value) {
+            const selectedOption = this.options[this.selectedIndex];
+            const fullName = selectedOption.getAttribute('data-fullname');
+            
+            // Seçilen müşteriyi göster
+            selectedCustomerName.textContent = fullName;
+            selectedCustomerDisplay.classList.remove('d-none');
+            customerSelectionArea.classList.add('d-none');
+        }
+    });
+}
+
+// Müşteri seçim alanını göster (Label veya karta tıklandığında)
+function showCustomerSelection() {
+    selectedCustomerDisplay.classList.add('d-none');
+    customerSelectionArea.classList.remove('d-none');
+    customerSearch.focus();
+}
+
+// Müşteri Arama Fonksiyonu
+if (customerSearch && customerSelect) {
+    customerSearch.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase().trim();
+        const options = customerSelect.options;
+        let visibleCount = 0;
+        let lastVisibleOption = null;
+        
+        for (let i = 1; i < options.length; i++) {
+            const option = options[i];
+            const name = option.getAttribute('data-name') || '';
+            const contact = option.getAttribute('data-contact') || '';
+            
+            if (searchTerm === '' || name.includes(searchTerm) || contact.includes(searchTerm)) {
+                option.style.display = '';
+                visibleCount++;
+                lastVisibleOption = option;
+            } else {
+                option.style.display = 'none';
+            }
+        }
+        
+        // Eğer arama sonucu tek bir müşteri kaldıysa otomatik seç
+        if (visibleCount === 1 && lastVisibleOption) {
+            customerSelect.value = lastVisibleOption.value;
+            
+            // Seçimi görsel olarak göster
+            const fullName = lastVisibleOption.getAttribute('data-fullname');
+            selectedCustomerName.textContent = fullName;
+            selectedCustomerDisplay.classList.remove('d-none');
+            customerSelectionArea.classList.add('d-none');
+        }
+    });
+    
+    customerSearch.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+        }
+    });
+}
+
+// Aramayı temizle
+function clearCustomerSearch() {
+    const searchInput = document.getElementById('customerSearch');
+    const select = document.getElementById('customerSelect');
+    
+    searchInput.value = '';
+    
+    const options = select.options;
+    for (let i = 1; i < options.length; i++) {
+        options[i].style.display = '';
+    }
+    
+    searchInput.focus();
+}
+
+function toggleOtherInput() {
+    const checkBox = document.getElementById('check_other');
+    const inputDiv = document.getElementById('div_other_input');
+    const inputField = document.getElementById('input_other');
+    
+    if (checkBox.checked) {
+        inputDiv.style.display = 'block';
+        inputField.required = true;
+        inputField.focus();
+    } else {
+        inputDiv.style.display = 'none';
+        inputField.required = false;
+        inputField.value = '';
+    }
+}
+
+// Türk para formatı (11.250,00)
+function formatCurrency(input) {
+    let value = input.value;
+    
+    // Sadece rakam, virgül ve noktaya izin ver
+    value = value.replace(/[^0-9.,]/g, '');
+    
+    // Sadece bir virgül olsun
+    const parts = value.split(',');
+    if (parts.length > 2) {
+        value = parts[0] + ',' + parts.slice(1).join('');
+    }
+    
+    // Tam kısmı formatla
+    if (parts[0]) {
+        // Önce tüm noktaları kaldır
+        let integerPart = parts[0].replace(/\./g, '');
+        
+        // Binlik ayırıcı ekle
+        if (integerPart.length > 3) {
+            integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        }
+        
+        value = integerPart;
+        if (parts.length > 1) {
+            // Ondalık kısım max 2 basamak
+            let decimalPart = parts[1].substring(0, 2);
+            value += ',' + decimalPart;
+        }
+    }
+    
+    input.value = value;
+}
+
+// Input alanına odaklandığında virgül varsa otomatik ondalık ekle
+document.getElementById('invoice_amount')?.addEventListener('blur', function() {
+    if (this.value && !this.value.includes(',')) {
+        this.value += ',00';
+    }
+});
+
+document.getElementById('invoice_total_amount')?.addEventListener('blur', function() {
+    if (this.value && !this.value.includes(',')) {
+        this.value += ',00';
     }
 });
 </script>

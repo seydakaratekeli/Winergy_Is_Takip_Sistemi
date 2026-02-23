@@ -57,6 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_delete'])) {
             $stmt = $db->prepare("DELETE FROM customers WHERE id = ?");
             if ($stmt->execute([$id])) {
                 log_activity('Müşteri Silindi', "Silinen Müşteri: {$customer['name']} (ID: {$customer['id']})", 'SUCCESS');
+                header("Location: musteriler.php?success=deleted");
                 exit;
             }
         }

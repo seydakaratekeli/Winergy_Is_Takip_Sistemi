@@ -340,7 +340,7 @@ include 'includes/header.php';
                     <div class="col-md-3">
                         <strong>Fatura Tutarı:</strong> <br>
                         <?php if(!empty($jobDetail['invoice_amount'])): ?>
-                            <span class="text-info fw-bold"><?php echo rtrim(rtrim(number_format($jobDetail['invoice_amount'], 2, ',', '.'), '0'), ','); ?> ₺</span>
+                            <span class="text-info fw-bold"><?php echo number_format($jobDetail['invoice_amount'], 2, ',', '.'); ?> ₺</span>
                             <br><small class="text-muted">Ana tutar</small>
                         <?php else: ?>
                             <span class="text-muted">-</span>
@@ -349,7 +349,7 @@ include 'includes/header.php';
                     <div class="col-md-2">
                         <strong>Toplam Tutar:</strong> <br>
                         <?php if(!empty($jobDetail['invoice_total_amount'])): ?>
-                            <span class="text-success fw-bold"><?php echo rtrim(rtrim(number_format($jobDetail['invoice_total_amount'], 2, ',', '.'), '0'), ','); ?> ₺</span>
+                            <span class="text-success fw-bold"><?php echo number_format($jobDetail['invoice_total_amount'], 2, ',', '.'); ?> ₺</span>
                             <br><small class="text-muted">Nihai tutar</small>
                         <?php else: ?>
                             <span class="text-muted">-</span>

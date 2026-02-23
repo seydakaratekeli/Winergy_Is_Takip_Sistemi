@@ -8,9 +8,13 @@ require_once 'config/db.php';
 require_once 'includes/csrf.php'; // CSRF Koruması
 require_once 'includes/logger.php'; 
 
+// Referrer'dan dönüş sayfasını belirle
+$referer = $_SERVER['HTTP_REFERER'] ?? 'index.php';
+$return_page = (strpos($referer, 'arama.php') !== false) ? 'arama.php' : 'index.php';
+
 // Sadece POST isteklerine izin ver
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header("Location: index.php");
+    header("Location: $return_page");
     exit;
 }
 
@@ -25,7 +29,7 @@ $action = $_POST['action'] ?? '';
 
 if (empty($job_ids) || empty($action)) {
     log_activity('Toplu İşlem Hatası', "Seçili işler veya işlem türü belirtilmediği için işlem yapılamadı.", 'ERROR');
-    header("Location: index.php?error=no_selection");
+    header("Location: $return_page?error=no_selection");
     exit;
 }
 
@@ -39,7 +43,7 @@ try {
             $new_status = $_POST['new_status'] ?? '';
             if (empty($new_status)) {
                 log_activity('İş Durumu Güncelleme Hatası', "Yeni durum belirtilmediği için güncelleme yapılamadı.", 'ERROR');
-                header("Location: index.php?error=no_status");
+                header("Location: $return_page?error=no_status");
                 exit;
             }
             
@@ -48,14 +52,14 @@ try {
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
             log_activity('İş Durumu Güncellendi', "Seçili işler için yeni durum: '$new_status'", 'INFO');
-            header("Location: index.php?success=status_updated&count=" . $stmt->rowCount());
+            header("Location: $return_page?success=status_updated&count=" . $stmt->rowCount());
             break;
             
         case 'assign_user':
             $user_id = $_POST['assign_user_id'] ?? '';
             if (empty($user_id)) {
                 log_activity('İş Atama Hatası', "Kullanıcı ID belirtilmediği için atama yapılamadı.", 'ERROR');
-                header("Location: index.php?error=no_user");
+                header("Location: $return_page?error=no_user");
                 exit;
             }
             
@@ -65,9 +69,28 @@ try {
             $stmt->execute($params);
             
             log_activity('İşler Atandı', "Seçili işler kullanıcı ID: $user_id ile atandı: " . implode(', ', $job_ids), 'INFO');
-            header("Location: index.php?success=assigned&count=" . $stmt->rowCount());
+            header("Location: $return_page?success=assigned&count=" . $stmt->rowCount());
             break;
             
+        case 'change_service_type':
+            $service_types = $_POST['service_type'] ?? [];
+            if (empty($service_types)) {
+                log_activity('Hizmet Türü Güncelleme Hatası', "Hizmet türü belirtilmediği için güncelleme yapılamadı.", 'ERROR');
+                header("Location: $return_page?error=no_service_type");
+                exit;
+            }
+            
+            // Hizmet türlerini JSON formatına çevir
+            $service_type_json = json_encode($service_types, JSON_UNESCAPED_UNICODE);
+            
+            $sql = "UPDATE jobs SET service_type = ?, updated_by = ?, updated_at = NOW() WHERE id IN ($placeholders)";
+            $params = array_merge([$service_type_json, $_SESSION['user_id']], $job_ids);
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            
+            log_activity('Hizmet Türü Güncellendi', "Seçili işler için yeni hizmet türleri: " . implode(', ', $service_types), 'INFO');
+            header("Location: $return_page?success=service_type_updated&count=" . $stmt->rowCount());
+            break;
        
     case 'delete':
     // Hard delete - İşleri veritabanından tamamen siler
@@ -77,16 +100,16 @@ try {
     $stmt->execute($params);
     
     log_activity('İşler Silindi', "Seçili işler kalıcı olarak silindi: " . implode(', ', $job_ids), 'WARNING');
-    header("Location: index.php?success=deleted&count=" . $stmt->rowCount());
+    header("Location: $return_page?success=deleted&count=" . $stmt->rowCount());
     break;
             
         default:
             log_activity('Toplu İşlem Hatası', "Geçersiz işlem türü: $action", 'ERROR');
-            header("Location: index.php?error=invalid_action");
+            header("Location: $return_page?error=invalid_action");
     }
 } catch (PDOException $e) {
     error_log("Toplu işlem hatası: " . $e->getMessage());
-    header("Location: index.php?error=database");
+    header("Location: $return_page?error=database");
 }
 exit;
 ?>

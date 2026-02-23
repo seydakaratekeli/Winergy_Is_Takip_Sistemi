@@ -9,11 +9,30 @@ function csrf_generate_token() {
         session_start();
     }
     
+    // Eğer session'da token varsa onu kullan (aynı sayfada birden fazla form için)
+    if (isset($_SESSION['csrf_token'])) {
+        return $_SESSION['csrf_token'];
+    }
+    
     // 32 byte rastgele, güvenli token
     $token = bin2hex(random_bytes(32));
     $_SESSION['csrf_token'] = $token;
     
     return $token;
+}
+
+/**
+ * CSRF Token Yenile
+ * Yeni bir sayfa yüklendiğinde token'ı yeniler
+ */
+function csrf_regenerate_token() {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    // Eski token'ı sil ve yeni token oluştur
+    unset($_SESSION['csrf_token']);
+    return csrf_generate_token();
 }
 
 /**
@@ -36,10 +55,8 @@ function csrf_validate_token($token) {
     // Token eşleşiyor mu? (timing attack'a karşı hash_equals kullanıyoruz)
     $valid = hash_equals($_SESSION['csrf_token'], $token);
     
-    // Kullan-at prensibi: Kullanıldıktan sonra sil (her formda yeni token oluşturulacak)
-    if ($valid) {
-        unset($_SESSION['csrf_token']);
-    }
+    // NOT: Token'ı hemen silmiyoruz çünkü aynı sayfada birden fazla form olabilir
+    // Token, bir sonraki sayfa yüklendiğinde yeniden oluşturulacak
     
     return $valid;
 }

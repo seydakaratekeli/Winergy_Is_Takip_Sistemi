@@ -29,28 +29,43 @@ $stmt = $db->prepare($query_sql);
 $stmt->execute($params);
 $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// --- YENİ MÜŞTERİ EKLEME ---
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_customer'])) {
-    // CSRF Token Kontrolü
-    if (!csrf_validate_token($_POST['csrf_token'] ?? '')) {
-        csrf_error();
-    }
-    
-    $name = $_POST['name'];
-    $contact = $_POST['contact_name'];
-    $phone = $_POST['phone'];
-    $email = $_POST['email'];
-    $address = $_POST['address'];
-    $created_by = $_SESSION['user_id'];
 
-    $ins = $db->prepare("INSERT INTO customers (name, contact_name, phone, email, address, created_by) VALUES (?, ?, ?, ?, ?, ?)");
-    if ($ins->execute([$name, $contact, $phone, $email, $address, $created_by])) {
-        echo "<div class='alert alert-success'>Müşteri başarıyla kaydedildi.</div>";
-        // Listeyi yenilemek için sayfayı tekrar yükle
-        echo "<script>window.location.href='musteriler.php';</script>";
-    }
-}
 ?>
+
+<!-- Başarı/Hata Bildirimleri -->
+<?php if (isset($_GET['success'])): ?>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <strong>Başarılı!</strong>
+        <?php 
+        if ($_GET['success'] == 'deleted') {
+            echo "Müşteri başarıyla silindi.";
+        } elseif ($_GET['success'] == 'added') {
+            echo "Yeni müşteri başarıyla eklendi.";
+        } elseif ($_GET['success'] == 'updated') {
+            echo "Müşteri bilgileri güncellendi.";
+        }
+        ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<?php endif; ?>
+
+<?php if (isset($_GET['error'])): ?>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <strong>Hata!</strong>
+        <?php 
+        if ($_GET['error'] == 'notfound') {
+            echo "Müşteri bulunamadı.";
+        } elseif ($_GET['error'] == 'self_delete') {
+            echo "Kendi kaydınızı silemezsiniz.";
+        } else {
+            echo "Bir hata oluştu.";
+        }
+        ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<?php endif; ?>
 
 <div class="row mb-4">
     <div class="col-md-8">
@@ -58,34 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_customer'])) {
        <p class="text-muted">Tüm kurumsal paydaşlar ve iletişim bilgileri.</p>
     </div>
     <div class="col-md-4 text-end">
-        <button class="btn btn-winergy" data-bs-toggle="collapse" data-bs-target="#addCustomerForm">+ Yeni Müşteri</button>
-    </div>
-</div>
-
-<div class="collapse mb-4" id="addCustomerForm">
-    <div class="card card-body shadow-sm border-0">
-        <h5 class="fw-bold mb-3">Yeni Müşteri Kaydı Oluştur</h5>
-        <form method="POST" class="row g-3">
-            <?php echo csrf_input(); ?>
-            <div class="col-md-3">
-                <input type="text" name="name" class="form-control form-control-sm" placeholder="Firma Adı" required>
-            </div>
-            <div class="col-md-3">
-                <input type="text" name="contact_name" class="form-control form-control-sm" placeholder="İlgili Kişi">
-            </div>
-            <div class="col-md-2">
-                <input type="text" name="phone" class="form-control form-control-sm phone-input" placeholder="0555 123 4567" maxlength="14">
-            </div>
-            <div class="col-md-2">
-                <input type="email" name="email" class="form-control form-control-sm" placeholder="E-Posta">
-            </div>
-            <div class="col-md-9">
-                <textarea name="address" class="form-control form-control-sm" placeholder="Adres" rows="2"></textarea>
-            </div>
-            <div class="col-md-3">
-                <button type="submit" name="add_customer" class="btn btn-winergy btn-sm w-100 h-100"><i class="bi bi-check-circle me-1"></i>Kaydet</button>
-            </div>
-        </form>
+        <a href="musteri-ekle.php" class="btn btn-winergy"><i class="bi bi-person-plus me-2"></i>+ Yeni Müşteri</a>
     </div>
 </div>
 
@@ -103,11 +91,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_customer'])) {
             </div>
             <div class="col-md-4 text-end">
                 <!-- Export Butonları -->
-                <button type="button" class="btn btn-success btn-sm" id="exportSelectedCustomersBtn" style="display: none;" onclick="exportSelectedCustomers()">
-                    <i class="bi bi-file-earmark-excel me-1"></i>Seçilenleri Aktar (<span id="exportCustomerCount">0</span>)
+                <button type="button" class="btn btn-success" id="exportSelectedCustomersBtn" style="display: none;" onclick="exportSelectedCustomers()">
+                    <i class="bi bi-file-earmark-excel me-2"></i>Seçilenleri Aktar (<span id="exportCustomerCount">0</span>)
                 </button>
-                <a href="export-musteriler.php?<?php echo http_build_query(['search' => $search]); ?>" class="btn btn-outline-success btn-sm">
-                    <i class="bi bi-file-earmark-excel me-1"></i>Excel'e Aktar
+                <a href="export-musteriler.php?<?php echo http_build_query(['search' => $search]); ?>" class="btn btn-success">
+                    <i class="bi bi-file-earmark-excel me-2"></i>Excel'e Aktar
                 </a>
             </div>
         </div>
@@ -223,6 +211,13 @@ function exportSelectedCustomers() {
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = 'export-musteriler.php<?php echo !empty($search) ? '?search=' . urlencode($search) : ''; ?>';
+    
+    // CSRF token ekle
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrf_token';
+    csrfInput.value = '<?php echo csrf_generate_token(); ?>';
+    form.appendChild(csrfInput);
     
     checkedBoxes.forEach(cb => {
         const input = document.createElement('input');

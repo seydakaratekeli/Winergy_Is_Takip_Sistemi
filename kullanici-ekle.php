@@ -14,10 +14,8 @@ if ($_SESSION['user_role'] !== 'admin') {
 require_once 'config/db.php';
 require_once 'includes/logger.php';
 require_once 'includes/csrf.php';
-include 'includes/header.php';
 
 $error = "";
-
 
 // Form gönderildiğinde
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -67,6 +65,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 }
+
+// HTML çıktısı başlat
+include 'includes/header.php';
 ?>
 
 <div class="row justify-content-center">

@@ -11,6 +11,14 @@ if (!isset($_SESSION['user_id'])) {
 
 require_once 'config/db.php';
 require_once 'includes/export.php';
+require_once 'includes/csrf.php';
+
+// POST ile seçili kayıtlar gönderiliyorsa CSRF kontrolü yap
+if (isset($_POST['selected_jobs'])) {
+    if (!csrf_validate_token($_POST['csrf_token'] ?? '')) {
+        die('Geçersiz istek tespit edildi');
+    }
+}
 
 // Filtreleri al
 $filters = [
